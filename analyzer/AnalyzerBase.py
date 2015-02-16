@@ -87,9 +87,6 @@ class AnalyzerBase(object):
         self.pu_weights = PileupWeights()
 
         self.file = rt.TFile(self.out_file, 'recreate')
-        self.numEvtsFilename = os.path.splitext(self.out_file)[0]+'.num.txt'     # TODO: change this to store in rootfile not txt file
-        self.cutflowFilename = os.path.splitext(self.out_file)[0]+'.cutflow.txt'
-        self.cutflowList = []
         
         self.ntuple, self.branches = buildNtuple(self.object_definitions,self.channel)
 

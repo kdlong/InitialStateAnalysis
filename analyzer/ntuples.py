@@ -8,6 +8,7 @@ def buildNtuple(object_definitions,channelName):
 
     finalStateObjects = 'emtjgn'
     structureDict = {}
+    structOrder = []
 
     # define common root classes
     rt.gROOT.ProcessLine(
@@ -21,6 +22,7 @@ def buildNtuple(object_definitions,channelName):
     };");
     eventStruct = rt.structEvent_t()
     structureDict['event'] = [eventStruct, eventStruct,'evt/I:run:lumi:nvtx:lep_scale/F:pu_weight']
+    structOrder += ['event']
 
     rt.gROOT.ProcessLine(
     "struct structChannel_t {\
@@ -28,6 +30,7 @@ def buildNtuple(object_definitions,channelName):
     };");
     channelStruct = rt.structChannel_t()
     structureDict['channel'] = [channelStruct, rt.AddressOf(channelStruct,'channel'),'channel/C']
+    structOrder += ['channel']
 
     rt.gROOT.ProcessLine(
     "struct structFinalState_t {\
@@ -47,6 +50,7 @@ def buildNtuple(object_definitions,channelName):
     };");
     finalStateStruct = rt.structFinalState_t()
     structureDict['finalstate'] = [finalStateStruct, finalStateStruct,'mass/F:sT:met:metPhi:jetVeto20/I:jetVeto30:jetVeto40:bjetVeto20:bjetVeto30:muonVeto5:muonVeto10Loose:muonVeto15:elecVeto10']
+    structOrder += ['finalstate']
 
     rt.gROOT.ProcessLine(
     "struct structObject_t {\
@@ -83,6 +87,8 @@ def buildNtuple(object_definitions,channelName):
                     objCount = phoCount
                 structureDict['%s%i' % (charName, objCount)] = [objStruct, objStruct, 'Pt/F:Eta:Phi:Iso:Chg/I']
                 structureDict['%s%iFlv' % (charName, objCount)] = [flvStruct, rt.AddressOf(flvStruct,'Flv'),'Flv/C']
+                structOrder += ['%s%i' % (charName, objCount)]
+                structOrder += ['%s%iFlv' % (charName, objCount)]
 
     # define objects for each initial state
     for key,val in object_definitions.iteritems():
@@ -121,6 +127,7 @@ def buildNtuple(object_definitions,channelName):
         rt.gROOT.ProcessLine(strToProcess)
         initialStruct = getattr(rt,"struct%s_t" % key.upper())()
         structureDict[key] = [initialStruct, initialStruct, strForBranch]
+        structOrder += [key]
 
     rt.gROOT.ProcessLine(
     "struct structInitialChar_t {\
@@ -129,11 +136,13 @@ def buildNtuple(object_definitions,channelName):
     for key in object_definitions:
         initialFlvStruct = rt.structInitialChar_t()
         structureDict['%sFlv' % key] = [initialFlvStruct,rt.AddressOf(initialFlvStruct,'Flv'),'Flv/C']
+        structOrder += ['%sFlv' % key]
 
     # now create the tree
     tree = rt.TTree(channelName,channelName)
     allBranches = {}
-    for key, val in structureDict.iteritems():
+    for key in structOrder:
+        val = structureDict[key]
         tree.Branch(key,val[1],val[2])
         allBranches[key] = val[0]
 
