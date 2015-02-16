@@ -13,12 +13,16 @@ import errno
 
 from multiprocessing import Pool
 
-from analyzer import *
+from utilities.utilities import *
+from analyzers.AnalyzerWZ import AnalyzerWZ
 
 def run_analyzer(args):
     '''Run the analysis'''
     analysis, channel, location, outfile, period = args
-    theAnalyzer = getattr(analyzer,'Analyzer%s' % channel)
+    analyzerMap = {
+        'WZ' : AnalyzerWZ,
+    }
+    theAnalyzer = analyzerMap[channel]
     with theAnalyzer(location,outfile,period) as analyzer:
         analyzer.analyze()
 
@@ -35,7 +39,7 @@ def run_ntuples(analysis, channel, period, samples):
             '4l': 'N/A', 
         },
         '13': {
-            'WZ': '2015-02-10-13TeV'
+            'WZ': '2015-02-10-13TeV',
             '3l': '2015-02-11-13TeV-3l',
             '4l': '2015-02-11-13TeV-4l',
         },
