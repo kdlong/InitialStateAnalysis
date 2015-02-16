@@ -83,6 +83,9 @@ class AnalyzerBase(object):
         self.finish()
 
     def begin(self):
+        self.lepscaler = LeptonScaleFactors()
+        self.pu_weights = PileupWeights()
+
         self.file = rt.TFile(self.out_file, 'recreate')
         self.numEvtsFilename = os.path.splitext(self.out_file)[0]+'.num.txt'     # TODO: change this to store in rootfile not txt file
         self.cutflowFilename = os.path.splitext(self.out_file)[0]+'.cutflow.txt'
@@ -143,7 +146,7 @@ class AnalyzerBase(object):
 
                     # can we define the object we want?
                     candidate = self.choose_objects(rtrow)
-                    if not candidate[1]: continue # in case no objects satisfy our requirements
+                    if not candidate: continue # in case no objects satisfy our requirements
                     if self.num+1>old:
                         self.cutflowMap[eventkey] = self.num+1
 
@@ -151,23 +154,29 @@ class AnalyzerBase(object):
                     if eventkey in self.bestCandMap: 
                         bestcand = self.bestCandMap[eventkey]
                     else:
-                        bestcand = float('inf')
+                        numMin = len(candidate[0])
+                        bestcand = [float('inf')] * numMin
                     if self.good_to_store(candidate[0],bestcand):
                         self.bestCandMap[eventkey] = candidate[0]
                         if self.num+2>old:
                             self.cutflowMap[eventkey] = self.num+2
                         ntupleRow = self.store_row(rtrow, *candidate[1])
-                        self.eventMap[eventKey] = ntupleRow
+                        self.eventMap[eventkey] = ntupleRow
                         eventsToWrite.add(eventkey)
 
             rtFile.Close()
             numEvts += tempEvts
 
+        # now we store all events that are kept
+        print "%s %s: Filling Tree" % (self.channel, self.sample_name)
+        self.file.cd()
+        for key in eventsToWrite:
+            self.write_row(self.eventMap[key])
+            self.ntuple.Fill()
+        print "%s %s: Filled Tree (%i events)" % (self.channel, self.sample_name, len(eventsToWrite))
+
         # now we store the total processed events
         print "%s %s: Processed %i events" % (self.channel, self.sample_name, numEvts)
-        evtsFile = open(self.numEvtsFilename,'w')
-        evtsFile.write(str(numEvts)+'\n')
-        evtsFile.close()
 
         # and the cutflow
         cutflowVals = []
@@ -176,17 +185,15 @@ class AnalyzerBase(object):
                 if len(cutflowVals)<i+1: cutflowVals.append(1)
                 else: cutflowVals[i] += 1
         print "%s %s: Cutflow: " % (self.channel, self.sample_name), cutflowVals
-        with open(self.cutflowFilename,'w') as txtfile:
-             for val in cutflowVals:
-                 txtfile.write('%i\n'%val)
 
-
-        # now we store all events that are kept
-        self.file.cd()
-        print "%s %s: Filled Tree (%i events)" % (self.channel, self.sample_name, len(eventsToWrite))
-        for key in eventsToWrite:
-            self.write_row(self.eventMap[key])
-            self.ntuple.Fill()
+        cutflowHist = rt.TH1F('cutflow','cutflow',len(cutflowVals)+1,0,len(cutflowVals)+1)
+        cutflowHist.SetBinContent(1,numEvts)
+        for i in range(len(cutflowVals)):
+            cutflowHist.SetBinContent(i+2,cutflowVals[i])
+        # rename cutflow bins if self.cutflow_labels defined
+        if hasattr(self,'cutflow_labels'):
+            pass # TODO
+        cutflowHist.Write()
 
     def finish(self):
         self.file.Write()
@@ -224,10 +231,12 @@ class AnalyzerBase(object):
         ntupleRow["event.lumi"] = int(rtrow.lumi)
         ntupleRow["event.run"] = int(rtrow.run)
         ntupleRow["event.nvtx"] = int(rtrow.nvtx)
-        ntupleRow["event.lep_scale"] = float(self.lepscaler.scale_factor(rtrow, l1, l2, l3, tight=True))
+        ntupleRow["event.lep_scale"] = float(self.lepscaler.scale_factor(rtrow, *objects, tight=True))
         ntupleRow["event.pu_weight"] = float(self.pu_weights.weight(rtrow))
 
-        ntupleRow["channel.channel"] = string([x[0] for x in objects])
+        channelString = ''
+        for x in objects: channelString += x[0]
+        ntupleRow["channel.channel"] = channelString
 
         ntupleRow["finalstate.mass"] = float(rtrow.Mass)
         ntupleRow["finalstate.sT"] = float(sum([getattr(rtrow, "%sPt" % x) for x in objects]))
@@ -248,10 +257,17 @@ class AnalyzerBase(object):
         for i in self.initial_states:
             numObjects = len([ x for x in self.object_definitions[i] if x != 'n'])
             finalObjects = objects[objStart:objStart+numObjects]
-            orderedFinalObjects = sort(finalObjects, key = getattr(rtrow,"%sPt" % str))
-            ntupleRow["%s.mass" %i] = float(getattr(rtrow, "%s_%s_Mass" % (finalObjects[0], finalObjects[1])))
-            ntupleRow["%s.sT" %i]   = float(sum([getattr(rtrow, "%sPt" % x) for x in finalObjects]))
-            ntupleRow["%s.dPhi" %i] = float(getattr(rtrow, "%s_%s_DPhi" % (finalObjects[0], finalObjects[1])))
+            orderedFinalObjects = sorted(finalObjects, key = lambda x: getattr(rtrow,"%sPt" % x))
+            if 'n' == self.object_definitions[i][1]:
+                ntupleRow["%s.mass" %i] = float(getattr(rtrow, "%sMtToPFMET" % finalObjects[0]))
+                ntupleRow["%s.sT" %i] = float(getattr(rtrow, "%sPt" % finalObjects[0]) + rtrow.pfMetEt)
+                ntupleRow["%s.dPhi" %i] = float(getattr(rtrow, "%sToMETDPhi" % finalObjects[0]))
+                ntupleRow["%sFlv.Flv" %i] = finalObjects[0][0]
+            else:
+                ntupleRow["%s.mass" %i] = float(getattr(rtrow, "%s_%s_Mass" % (finalObjects[0], finalObjects[1])))
+                ntupleRow["%s.sT" %i]   = float(sum([getattr(rtrow, "%sPt" % x) for x in finalObjects]))
+                ntupleRow["%s.dPhi" %i] = float(getattr(rtrow, "%s_%s_DPhi" % (finalObjects[0], finalObjects[1])))
+                ntupleRow["%sFlv.Flv" %i] = finalObjects[0][0] + finalObjects[1][0]
             objCount = 0
             for obj in self.object_definitions[i]:
                 if obj=='n':
@@ -259,18 +275,17 @@ class AnalyzerBase(object):
                     ntupleRow["%s.met" %i] = float(rtrow.pfMetPhi)
                 else: 
                     objCount += 1
-                    ntupleRow["%s.Pt%i" % (i,objCount)] = float(getattr(rtrow, "%sPt" % orderedFinalObjects[objectCount-1]))
-                    ntupleRow["%s.Eta%i" % (i,objCount)] = float(getattr(rtrow, "%sEta" % orderedFinalObjects[objectCount-1]))
-                    ntupleRow["%s.Phi%i" % (i,objCount)] = float(getattr(rtrow, "%sPhi" % orderedFinalObjects[objectCount-1]))
-                    ntupleRow["%s.Chg%i" % (i,objCount)] = float(getattr(rtrow, "%sCharge" % orderedFinalObjects[objectCount-1]))
-                    ntupleRow["%sFlv.Flv" %i] = sum([x[0] for x in finalObjects])
+                    ntupleRow["%s.Pt%i" % (i,objCount)] = float(getattr(rtrow, "%sPt" % orderedFinalObjects[objCount-1]))
+                    ntupleRow["%s.Eta%i" % (i,objCount)] = float(getattr(rtrow, "%sEta" % orderedFinalObjects[objCount-1]))
+                    ntupleRow["%s.Phi%i" % (i,objCount)] = float(getattr(rtrow, "%sPhi" % orderedFinalObjects[objCount-1]))
+                    ntupleRow["%s.Chg%i" % (i,objCount)] = float(getattr(rtrow, "%sCharge" % orderedFinalObjects[objCount-1]))
             objStart += numObjects
 
         # final state objects
         lepCount = 0
         jetCount = 0
         phoCount = 0
-        orderedAllObjects = sort(objects, key = getattr(rtrow,"%sPt" % str))
+        orderedAllObjects = sorted(objects, key = lambda x: getattr(rtrow,"%sPt" % x))
         for obj in orderedAllObjects:
             if obj[0] in 'emt':
                 charName = 'l'
@@ -301,7 +316,7 @@ class AnalyzerBase(object):
         '''
         for key,val in nrow.iteritems():
             branch, var = key.split('.')
-            setattr(getattr(self.allBranches[branch],var),var,val)
+            setattr(self.branches[branch],var,val)
 
     def pass_preselection(self, rtrow):
         '''
@@ -332,6 +347,6 @@ class AnalyzerBase(object):
                 else:
                     print 'Error: unknow ID %s' % type
                     result = 0
-                self.cache['ID_%s_%s'%(type,lep)] = result
+                self.cache['ID_%s_%s'%(type,obj)] = result
                 if not result: return False
         return True

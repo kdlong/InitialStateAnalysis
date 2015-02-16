@@ -1,7 +1,7 @@
 import ROOT as rt
 from array import array
 
-def buildNtuple(object_definitions,channelname):
+def buildNtuple(object_definitions,channelName):
     '''
     A function to build an initial state ntuple for AnalyzerBase.py
     '''
@@ -20,7 +20,7 @@ def buildNtuple(object_definitions,channelname):
        Float_t pu_weight;\
     };");
     eventStruct = rt.structEvent_t()
-    structureDict['event'] = [eventStruct, eventStruct,'evt\I:run:lumi:nvtx:lep_scale\F:pu_weight']
+    structureDict['event'] = [eventStruct, eventStruct,'evt/I:run:lumi:nvtx:lep_scale/F:pu_weight']
 
     rt.gROOT.ProcessLine(
     "struct structChannel_t {\
@@ -87,9 +87,9 @@ def buildNtuple(object_definitions,channelname):
     # define objects for each initial state
     for key,val in object_definitions.iteritems():
         strForBranch = ""
-        strToProcess = "struct struct%s_t {" key.upper()
+        strToProcess = "struct struct%s_t {" % key.upper()
         strForBranch += "mass/F:sT:dPhi:"
-        strToProcess + = "\
+        strToProcess += "\
             Float_t mass;\
             Float_t sT;\
             Float_t dPhi;"
@@ -123,7 +123,7 @@ def buildNtuple(object_definitions,channelname):
         structureDict[key] = [initialStruct, initialStruct, strForBranch]
 
     rt.gROOT.ProcessLine(
-    "struct structInitalChar_t {\
+    "struct structInitialChar_t {\
        Char_t  Flv[3];\
     };");
     for key in object_definitions:

@@ -1,8 +1,8 @@
 import sys
 import os
 import glob
-#import FinalStateAnalysis.TagAndProbe.MuonPOGCorrections as MuonPOGCorrections
-#import FinalStateAnalysis.TagAndProbe.H2TauCorrections as H2TauCorrections
+import FinalStateAnalysis.TagAndProbe.MuonPOGCorrections as MuonPOGCorrections
+import FinalStateAnalysis.TagAndProbe.H2TauCorrections as H2TauCorrections
 
 sys.argv.append('-b')
 import ROOT as rt
@@ -22,8 +22,8 @@ class LeptonScaleFactors(object):
         self.m_rtfile = rt.TFile(path, 'READ')
         self.m_hist = self.m_rtfile.Get("TH2D_ALL_2012")
 
-        #self.muPOGId = MuonPOGCorrections.make_muon_pog_PFTight_2012()
-        #self.muPOGIso = MuonPOGCorrections.make_muon_pog_PFRelIsoDB012_2012()
+        self.muPOGId = MuonPOGCorrections.make_muon_pog_PFTight_2012()
+        self.muPOGIso = MuonPOGCorrections.make_muon_pog_PFRelIsoDB012_2012()
 
     def scale_factor(self, row, *lep_list, **kwargs):
         tight = kwargs.pop('tight',False)
@@ -58,8 +58,8 @@ class LeptonScaleFactors(object):
     def e_tight_scale(self, row, l):
         pt = getattr(row, "%sPt" % l)
         eta = getattr(row, "%sEta" % l)
-        #return H2TauCorrections.correct_e_idiso_2012(pt,abs(eta))
-        return 1.
+        return H2TauCorrections.correct_e_idiso_2012(pt,abs(eta))
+        #return 1.
 
     def m_scale(self, row, l):
         pt = getattr(row, "%sPt" % l)
@@ -76,8 +76,8 @@ class LeptonScaleFactors(object):
         pt = getattr(row, "%sPt" % l)
         eta = getattr(row, "%sEta" % l)
         #return self.muPOGId(pt,eta) * self.muPOGIso(pt,eta)
-        #return H2TauCorrections.correct_mu_idiso_2012(pt,eta)
-        return 1.0
+        return H2TauCorrections.correct_mu_idiso_2012(pt,eta)
+        #return 1.0
 
     def close(self):
         self.e_rtfile.Close()

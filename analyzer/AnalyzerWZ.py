@@ -5,7 +5,7 @@ The WZ analyzer.
 
 from AnalyzerBase import *
 
-class AnalyzeWZ(AnalyzerBase):
+class AnalyzerWZ(AnalyzerBase):
     '''
     An implementation of the AnalyzerBase class for use in WZ analysis.
 
@@ -13,7 +13,7 @@ class AnalyzeWZ(AnalyzerBase):
         z: 2 leptons same flavor opposite sign
         w: 1 lepton and met
     Minimization function:
-        Veto on 4th lepton
+        Z mass difference
     Selection:
         Trigger: double lepton triggers
         Fiducial cut
@@ -32,7 +32,8 @@ class AnalyzeWZ(AnalyzerBase):
             'w': ['em','n'],
             'z': ['em','em'],
         }
-        super(AnalyzeWZ, self).__init__(sample_location, out_file, period)
+        self.cutflow_labels = ['Trigger','Fiducial','Tight ID','Isolation','3l Mass','Z Selection','W Selection']
+        super(AnalyzerWZ, self).__init__(sample_location, out_file, period)
 
     ###############################
     ### Define Object selection ###
@@ -48,7 +49,7 @@ class AnalyzeWZ(AnalyzerBase):
             if lep_order(l[0], l[1]):
                 continue
 
-            OS1 = getattr(rtrow, "%s_%s_SS" % (l[0], l[1])) < 0 # select opposite sign
+            OS1 = getattr(rtrow, "%s_%s_SS" % (l[0], l[1])) < 0.5 # select opposite sign
             mass = getattr(rtrow, "%s_%s_Mass" % (l[0], l[1]))
             massdiff = abs(ZMASS-mass)
 
@@ -112,7 +113,7 @@ class AnalyzeWZ(AnalyzerBase):
         return self.ID(rtrow,'wztightnoiso',*self.objects)
 
     def isolation(self, rtrow):
-        for l in self.leptons:
+        for l in self.objects:
             if l[0] == 'e':
                 isotype = "RelPFIsoRho"
                 isocut = 0.15
