@@ -105,7 +105,7 @@ class PlotterBase(object):
         self.sampleMergeDict['TTVJets'] = ['TTWJets_Tune4C_13TeV-madgraph-tauola',\
             'TTZJets_Tune4C_13TeV-madgraph-tauola']
         # 8 TeV sample aliases
-        if self.period==8:
+        if period==8:
             self.sampleMergeDict['WWJets'] = ['WWJetsTo2L2Nu_TuneZ2star_8TeV-madgraph-tauola']
             self.sampleMergeDict['WZJets'] = ['WZJetsTo2L2Q_TuneZ2star_8TeV-madgraph-tauola',\
                 'WZJetsTo3LNu_TuneZ2_8TeV-madgraph-tauola']
@@ -177,19 +177,17 @@ class PlotterBase(object):
         '''initialize single sample'''
         self.samples[sample] = {} 
         file = self.ntupleDir+'/%s.root' % sample
+        self.samples[sample]['file'] = ROOT.TFile(file)
         if 'data' in sample:
             lumifile = self.ntupleDir+'/%s.lumicalc.sum' % sample
             #lumi = open(lumifile)
             #self.samples[sample]['lumi'] = lumi.readline()
             #lumi.close()
         else:
-            eventsfile = self.ntupleDir+'/%s.num.txt' % sample
-            eventsdata = open(eventsfile)
-            n_evts = eventsdata.readline()
-            eventsdata.close()
+            cutflowHist = self.samples[sample]['file'].Get('cutflow')
+            n_evts = cutflowHist.GetBinContent(1)
             sample_xsec = self.xsecs[sample]
             self.samples[sample]['lumi'] = float(n_evts)/sample_xsec
-        self.samples[sample]['file'] = ROOT.TFile(file)
 
     def initializeSamples(self,sampleList):
         '''Initialize a list of samples to the sample dictionary.'''
