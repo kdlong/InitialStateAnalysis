@@ -8,7 +8,7 @@ import argparse
 
 
 def parse_command_line(argv):
-    parser = argparse.ArgumentParser(description="Submit analyzer to condor")
+    parser = argparse.ArgumentParser(description="Untar ntuples from submit directory")
 
     parser.add_argument('jobName', type=str, nargs='+', help='Job name for submission')
     args = parser.parse_args(argv)
