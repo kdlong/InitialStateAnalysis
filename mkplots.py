@@ -248,8 +248,8 @@ def plotTest():
 def parse_command_line(argv):
     parser = argparse.ArgumentParser(description="Plot a given channel and period")
 
-    parser.add_argument('analysis', type=str, choices=['WZ','Hpp3l'], help='Analysis to plot')
-    parser.add_argument('channel', type=str, choices=['WZ','Hpp3l'], help='Channel in analysis')
+    parser.add_argument('analysis', type=str, choices=['WZ','Hpp3l','Hpp4l'], help='Analysis to plot')
+    parser.add_argument('channel', type=str, choices=['WZ','Hpp3l','Hpp4l'], help='Channel in analysis')
     parser.add_argument('period', type=int, choices=[7,8,13], help='Energy (TeV)')
     parser.add_argument('-pf','--plotFinalStates',action='store_true',help='Plot individual final states')
     parser.add_argument('-pj','--plotJetBins',action='store_true',help='Plot jet bins')
