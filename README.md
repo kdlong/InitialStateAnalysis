@@ -38,6 +38,12 @@ One can also run the analyzer directly via:
 ./analyzers/AnalyzerWZ.py /path/to/sample/directory/ output.root 13
 ```
 
+Jobs can be submitted to the cluster using the --submit option:
+
+```
+./run.py --submit --jobName=testSubmit Hpp3l Hpp3l 13 D* T* W* Z* 
+```
+
 Plotting
 --------
 
