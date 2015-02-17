@@ -80,7 +80,7 @@ def submitJob(jobName,runArgs):
     python_mkdir(submitDir)
 
     # copy code
-    os.system('tar -zcf %s/userCode.tar.gz analyzers run.py' % submitDir)
+    os.system('tar -zcf %s/userCode.tar.gz analyzers utilities run.py' % submitDir)
 
     # copy submit script
     submitInfile = open('utilities/condor.submit')
