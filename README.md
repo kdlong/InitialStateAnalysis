@@ -50,7 +50,8 @@ Plotting
 Plotting can be accomplished via the [mkplots.py](mkplots.py) command:
 
 ```
-TODO
+# Usage: ./mkplots.py [analysis] [channel] [period] [options]
+./mkplots.py Hpp3l Hpp3l 13
 ```
 
 Limits
