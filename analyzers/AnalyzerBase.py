@@ -21,6 +21,8 @@ Variables and functions that must be defined in inheritor class:
     choose_objects(rtrow)   A function that produces object candidates and a list minimizing variables
                             ex: return ([massdiff, -ptsum], list(leptons))
     preselection(rtrow)     A function to return a CutSequence object with ordered cuts to be applied
+
+Author: Devin N. Taylor, UW-Madison
 '''
 import os
 import sys
@@ -88,7 +90,7 @@ class AnalyzerBase(object):
 
         self.file = rt.TFile(self.out_file, 'recreate')
         
-        self.ntuple, self.branches = buildNtuple(self.object_definitions,self.channel)
+        self.ntuple, self.branches = buildNtuple(self.object_definitions,self.initial_states,self.channel)
 
     def analyze(self,**kwargs):
         '''
@@ -153,7 +155,7 @@ class AnalyzerBase(object):
                     else:
                         numMin = len(candidate[0])
                         bestcand = [float('inf')] * numMin
-                    if self.good_to_store(candidate[0],bestcand):
+                    if self.good_to_store(rtrow,candidate[0],bestcand):
                         self.bestCandMap[eventkey] = candidate[0]
                         if self.num+2>old:
                             self.cutflowMap[eventkey] = self.num+2
@@ -209,7 +211,7 @@ class AnalyzerBase(object):
         return out
 
     @staticmethod
-    def good_to_store(cand1, cand2):
+    def good_to_store(rtrow, cand1, cand2):
         '''
         Iterate through minimizing variables.
         '''
@@ -269,7 +271,7 @@ class AnalyzerBase(object):
             for obj in self.object_definitions[i]:
                 if obj=='n':
                     ntupleRow["%s.met" %i] = float(rtrow.pfMetEt)
-                    ntupleRow["%s.met" %i] = float(rtrow.pfMetPhi)
+                    ntupleRow["%s.metPhi" %i] = float(rtrow.pfMetPhi)
                 else: 
                     objCount += 1
                     ntupleRow["%s.Pt%i" % (i,objCount)] = float(getattr(rtrow, "%sPt" % orderedFinalObjects[objCount-1]))
@@ -325,10 +327,14 @@ class AnalyzerBase(object):
         self.cache['selection'] = cutResults
         return cutResults
 
-    def ID(self,rtrow,type,*objects):
+    def ID(self,rtrow,*objects,**kwargs):
         '''
         An ID accessor method.
         '''
+        type = kwargs.pop('id','')
+        cbid = kwargs.pop('cbid','')
+        mva = kwargs.pop('mva','')
+        if not type: type = '%s_%s' % (cbid, mva)
         for obj in objects:
             if 'ID_%s_%s' %(type,obj) in self.cache:
                 if not self.cache['ID_%s_%s'%(type,obj)]: return False
@@ -341,6 +347,8 @@ class AnalyzerBase(object):
                     result = lepId.lep_id(rtrow,self.period,obj,wzloosenoiso=True)
                 elif type=='wztightnoiso':
                     result = lepId.lep_id(rtrow,self.period,obj,wztightnoiso=True)
+                elif cbid or mva:
+                    result = lepId.lep_id(rtrow,self.period,obj,cbid=cbid,mva=mva)
                 else:
                     print 'Error: unknow ID %s' % type
                     result = 0

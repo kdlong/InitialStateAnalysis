@@ -1,7 +1,13 @@
+'''
+Utilities for building ntuples used in ISA.
+
+Author: Devin N. Taylor, UW-Madison
+'''
+
 import ROOT as rt
 from array import array
 
-def buildNtuple(object_definitions,channelName):
+def buildNtuple(object_definitions,initialStates,channelName):
     '''
     A function to build an initial state ntuple for AnalyzerBase.py
     '''
@@ -67,7 +73,8 @@ def buildNtuple(object_definitions,channelName):
     lepCount = 0
     jetCount = 0
     phoCount = 0
-    for key,val in object_definitions.iteritems():
+    for key in initialStates:
+        val = object_definitions[key]
         for obj in val:
             if obj=='n': continue
             else:
@@ -91,7 +98,8 @@ def buildNtuple(object_definitions,channelName):
                 structOrder += ['%s%iFlv' % (charName, objCount)]
 
     # define objects for each initial state
-    for key,val in object_definitions.iteritems():
+    for key in initialStates:
+        val = object_definitions[key]
         strForBranch = ""
         strToProcess = "struct struct%s_t {" % key.upper()
         strForBranch += "mass/F:sT:dPhi:"

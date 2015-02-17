@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 '''
 An analyzer template.
+
+Author: Devin N. Taylor, UW-Madison
 '''
 
 from AnalyzerBase import *
@@ -51,9 +53,9 @@ class AnalyzerLABEL(AnalyzerBase):
 
         # return selected candidate in form ([minimizing variables list],list(l))
 
-    ##########################
-    ### Defin preselection ###
-    ##########################
+    ###########################
+    ### Define preselection ###
+    ###########################
     def preselection(self,rtrow):
         cuts = CutSequence()
         # TODO: define cuts

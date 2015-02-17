@@ -1,3 +1,9 @@
+'''
+Several scripts useful for other modules in ISA.
+
+Author: Devin N. Taylor, UW-Madison
+'''
+
 import os
 import sys
 import errno

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 '''
 The WZ analyzer.
+
+Author: Devin N. Taylor, UW-Madison
 '''
 
 from AnalyzerBase import *
@@ -110,7 +112,7 @@ class AnalyzerWZ(AnalyzerBase):
         return True
 
     def ID_tight(self, rtrow):
-        return self.ID(rtrow,'wztightnoiso',*self.objects)
+        return self.ID(rtrow,id='wztightnoiso',*self.objects)
 
     def isolation(self, rtrow):
         for l in self.objects:

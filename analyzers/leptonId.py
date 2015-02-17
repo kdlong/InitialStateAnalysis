@@ -1,3 +1,9 @@
+'''
+Lepton ID's available in ISA
+
+Author: Devin N. Taylor, UW-Madison
+'''
+
 import sys
 
 sys.argv.append('b')
@@ -12,6 +18,19 @@ def lep_id(rtrow, period, *lep, **kwargs):
     wzloosenoiso = kwargs.get('wzloosenoiso', False)
     wztight = kwargs.get('wztight', False)
     wztightnoiso = kwargs.get('wztightnoiso', False)
+    cbid = kwargs.get('cbid','')
+    mva = kwargs.get('mva','')
+
+    if cbid or mva:
+        for l in lep:
+            if l[0]=='e':
+                if not elec_id_cbid_mva(rtrow,l,period,cbid,mva): return False
+            if l[0]=='m':
+                if not muon_id_tight(rtrow,l,period): return False
+            if l[0]=='t':
+                if not tau_id(rtrow,l,period): return False
+        return True
+            
 
     if tight:
         elec_method = 'elec_id_tight'
@@ -44,6 +63,21 @@ def lep_id(rtrow, period, *lep, **kwargs):
         if l[0]=='t': method = tau_method
         if not eval('%s(rtrow,l,period)'%method): return False
 
+    return True
+
+def elec_id_cbid_mva(rtrow,l,period,cbid,mva):
+    if mva=='NonTrig':
+        if not _elec_mva_nontriggering(rtrow, l, period): return False
+    if mva=='Trig':
+        if not _elec_mva_triggering(rtrow, l, period): return False
+    if cbid=='Veto':
+        if not getattr(rtrow, '%sCBIDVeto' % l): return False
+    if cbid=='Loose':
+        if not getattr(rtrow, '%sCBIDLoose' % l): return False
+    if cbid=='Medium':
+        if not getattr(rtrow, '%sCBIDMedium' % l): return False
+    if cbid=='Tight':
+        if not getattr(rtrow, '%sCBIDTight' % l): return False
     return True
 
 def tau_id(rtrow, l, period):
@@ -173,7 +207,7 @@ def elec_WZ_tight_noiso(rtrow, l, period):
     mva = _elec_mva_triggering(rtrow, l, period)
 
     if period=='13':
-        cbid = getattr(rtrow, '%sCBIDLoose' % l)
+        cbid = getattr(rtrow, '%sCBIDTight' % l)
         return cbid and d0<0.02 and dz<0.1 and mva
 
     wzloose = elec_WZ_loose(rtrow, l, period)

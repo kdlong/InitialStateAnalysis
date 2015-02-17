@@ -15,12 +15,14 @@ from multiprocessing import Pool
 
 from utilities.utilities import *
 from analyzers.AnalyzerWZ import AnalyzerWZ
+from analyzers.AnalyzerHpp3l import AnalyzerHpp3l
 
 def run_analyzer(args):
     '''Run the analysis'''
     analysis, channel, location, outfile, period = args
     analyzerMap = {
-        'WZ' : AnalyzerWZ,
+        'WZ'   : AnalyzerWZ,
+        'Hpp3l': AnalyzerHpp3l,
     }
     theAnalyzer = analyzerMap[channel]
     with theAnalyzer(location,outfile,period) as analyzer:
@@ -31,17 +33,17 @@ def run_ntuples(analysis, channel, period, samples):
 
     ntupleDict = {
         '7': {
-            '3l': 'N/A',
-            '4l': 'N/A', 
+            'Hpp3l': 'N/A',
+            'Hpp4l': 'N/A', 
         },
         '8': {
-            '3l': '2014-12-04-8TeV',
-            '4l': 'N/A', 
+            'Hpp3l': '2014-12-04-8TeV',
+            'Hpp4l': 'N/A', 
         },
         '13': {
-            'WZ': '2015-02-10-13TeV',
-            '3l': '2015-02-11-13TeV-3l',
-            '4l': '2015-02-11-13TeV-4l',
+            'WZ'   : '2015-02-10-13TeV',
+            'Hpp3l': '2015-02-11-13TeV-3l',
+            'Hpp4l': '2015-02-11-13TeV-4l',
         },
     }
     root_dir = '/hdfs/store/user/dntaylor/data/%s' % ntupleDict[period][analysis]
@@ -62,8 +64,8 @@ def parse_command_line(argv):
     parser = argparse.ArgumentParser(description="Run the desired analyzer on "
                                                  "FSA n-tuples")
 
-    parser.add_argument('analysis', type=str, choices=['WZ'], help='Analysis to run')
-    parser.add_argument('channel', type=str, choices=['WZ'], help='Channel to run for given analysis')
+    parser.add_argument('analysis', type=str, choices=['WZ','Hpp3l'], help='Analysis to run')
+    parser.add_argument('channel', type=str, choices=['WZ','Hpp3l'], help='Channel to run for given analysis')
     parser.add_argument('period', type=str, choices=['7','8','13'], help='7, 8, 13')
     parser.add_argument('sample_names', nargs='+',
                         help='Sample names w/ UNIX wildcards')
