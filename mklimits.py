@@ -275,12 +275,12 @@ def add_systematics_fakerate(limits,mass,signal,name,chans,sigscale):
 def parse_command_line(argv):
     parser = argparse.ArgumentParser(description="Produce datacards")
 
-    parser.add_argument('region', type=str, choices=['3l','4l'], help='Analysis to run')
+    parser.add_argument('region', type=str, choices=['WZ','Hpp3l','Hpp4l'], help='Analysis to run')
     parser.add_argument('period', type=int, choices=[7, 8, 13], help='Energy (TeV)')
-    parser.add_argument('-m','--mass',nargs='?',type=int,const=500,default=500)
-    parser.add_argument('-am','--allMasses',action='store_true',help='Run over all masses')
-    parser.add_argument('-bp','--branchingPoint',nargs='?',type=str,const='BP4',default='BP4',choices=['ee100','em100','mm100','BP1','BP2','BP3','BP4'],help='Choose branching point')
-    parser.add_argument('-ab','--allBranchingPoints',action='store_true',help='Run over all branching points')
+    parser.add_argument('-m','--mass',nargs='?',type=int,const=500,default=500,help='Mass for signal')
+    parser.add_argument('-am','--allMasses',action='store_true',help='Run over all masses for signal')
+    parser.add_argument('-bp','--branchingPoint',nargs='?',type=str,const='BP4',default='BP4',choices=['ee100','em100','mm100','BP1','BP2','BP3','BP4'],help='Choose branching point for H++')
+    parser.add_argument('-ab','--allBranchingPoints',action='store_true',help='Run over all branching points for H++')
     parser.add_argument('-bg','--bgMode',nargs='?',type=str,const='mc',default='mc',choices=['mc','sideband','fakerate'],help='Choose BG estimation')
 
     args = parser.parse_args(argv)
