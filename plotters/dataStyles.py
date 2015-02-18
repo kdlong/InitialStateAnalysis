@@ -3,6 +3,7 @@ Data styles to be used with the PlotterBase class.
 '''
 
 import ROOT
+ROOT.PyConfig.IgnoreCommandLineOptions = True
 import copy
 
 dataStyles = {}
