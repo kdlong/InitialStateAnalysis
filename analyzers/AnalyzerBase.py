@@ -91,7 +91,11 @@ class AnalyzerBase(object):
 
         self.file = rt.TFile(self.out_file, 'recreate')
         
-        self.ntuple, self.branches = buildNtuple(self.object_definitions,self.initial_states,self.channel)
+        if hasattr(self,'other_states'):
+            states = [self.initial_states] + self.other_states
+        else:
+            states = [self.initial_states]
+        self.ntuple, self.branches = buildNtuple(self.object_definitions,states,self.channel)
 
     def analyze(self,**kwargs):
         '''
@@ -211,6 +215,12 @@ class AnalyzerBase(object):
                out += ['%s%i' % (i, n) for n in xrange(1, N+1)]
         return out
 
+    def choose_alternative_objects(self, rtorw, state):
+        '''
+        Dummy method for alternative object selection.
+        '''
+        return []
+
     @staticmethod
     def good_to_store(rtrow, cand1, cand2):
         '''
@@ -252,34 +262,44 @@ class AnalyzerBase(object):
         ntupleRow["finalstate.muonVeto15"] = int(rtrow.muVetoPt15IsoIdVtx)
         ntupleRow["finalstate.elecVeto10"] = int(rtrow.eVetoMVAIsoVtx)
 
+        def store_state(rtrow,ntupleRow,state,theObjects):
+            objStart = 0
+            for i in state:
+                numObjects = len([ x for x in self.object_definitions[i] if x != 'n']) if theObjects else 0
+                finalObjects = theObjects[objStart:objStart+numObjects]
+                orderedFinalObjects = sorted(finalObjects, key = lambda x: getattr(rtrow,"%sPt" % x))
+                if 'n' == self.object_definitions[i][1]:
+                    ntupleRow["%s.mass" %i] = float(getattr(rtrow, "%sMtToPFMET" % finalObjects[0])) if theObjects else float(-9)
+                    ntupleRow["%s.sT" %i] = float(getattr(rtrow, "%sPt" % finalObjects[0]) + rtrow.pfMetEt) if theObjects else float(-9)
+                    ntupleRow["%s.dPhi" %i] = float(getattr(rtrow, "%sToMETDPhi" % finalObjects[0])) if theObjects else float(-9)
+                    ntupleRow["%sFlv.Flv" %i] = finalObjects[0][0] if theObjects else 'a'
+                else:
+                    ntupleRow["%s.mass" %i] = float(getattr(rtrow, "%s_%s_Mass" % (finalObjects[0], finalObjects[1]))) if theObjects else float(-9)
+                    ntupleRow["%s.sT" %i]   = float(sum([getattr(rtrow, "%sPt" % x) for x in finalObjects])) if theObjects else float(-9)
+                    ntupleRow["%s.dPhi" %i] = float(getattr(rtrow, "%s_%s_DPhi" % (finalObjects[0], finalObjects[1]))) if theObjects else float(-9)
+                    ntupleRow["%sFlv.Flv" %i] = finalObjects[0][0] + finalObjects[1][0] if theObjects else 'aa'
+                objCount = 0
+                for obj in self.object_definitions[i]:
+                    if obj=='n':
+                        ntupleRow["%s.met" %i] = float(rtrow.pfMetEt) if theObjects else float(-9)
+                        ntupleRow["%s.metPhi" %i] = float(rtrow.pfMetPhi) if theObjects else float(-9)
+                    else:
+                        objCount += 1
+                        ntupleRow["%s.Pt%i" % (i,objCount)] = float(getattr(rtrow, "%sPt" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
+                        ntupleRow["%s.Eta%i" % (i,objCount)] = float(getattr(rtrow, "%sEta" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
+                        ntupleRow["%s.Phi%i" % (i,objCount)] = float(getattr(rtrow, "%sPhi" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
+                        ntupleRow["%s.Chg%i" % (i,objCount)] = float(getattr(rtrow, "%sCharge" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
+                objStart += numObjects
+
+
         # initial state objects
-        objStart = 0
-        for i in self.initial_states:
-            numObjects = len([ x for x in self.object_definitions[i] if x != 'n'])
-            finalObjects = objects[objStart:objStart+numObjects]
-            orderedFinalObjects = sorted(finalObjects, key = lambda x: getattr(rtrow,"%sPt" % x))
-            if 'n' == self.object_definitions[i][1]:
-                ntupleRow["%s.mass" %i] = float(getattr(rtrow, "%sMtToPFMET" % finalObjects[0]))
-                ntupleRow["%s.sT" %i] = float(getattr(rtrow, "%sPt" % finalObjects[0]) + rtrow.pfMetEt)
-                ntupleRow["%s.dPhi" %i] = float(getattr(rtrow, "%sToMETDPhi" % finalObjects[0]))
-                ntupleRow["%sFlv.Flv" %i] = finalObjects[0][0]
-            else:
-                ntupleRow["%s.mass" %i] = float(getattr(rtrow, "%s_%s_Mass" % (finalObjects[0], finalObjects[1])))
-                ntupleRow["%s.sT" %i]   = float(sum([getattr(rtrow, "%sPt" % x) for x in finalObjects]))
-                ntupleRow["%s.dPhi" %i] = float(getattr(rtrow, "%s_%s_DPhi" % (finalObjects[0], finalObjects[1])))
-                ntupleRow["%sFlv.Flv" %i] = finalObjects[0][0] + finalObjects[1][0]
-            objCount = 0
-            for obj in self.object_definitions[i]:
-                if obj=='n':
-                    ntupleRow["%s.met" %i] = float(rtrow.pfMetEt)
-                    ntupleRow["%s.metPhi" %i] = float(rtrow.pfMetPhi)
-                else: 
-                    objCount += 1
-                    ntupleRow["%s.Pt%i" % (i,objCount)] = float(getattr(rtrow, "%sPt" % orderedFinalObjects[objCount-1]))
-                    ntupleRow["%s.Eta%i" % (i,objCount)] = float(getattr(rtrow, "%sEta" % orderedFinalObjects[objCount-1]))
-                    ntupleRow["%s.Phi%i" % (i,objCount)] = float(getattr(rtrow, "%sPhi" % orderedFinalObjects[objCount-1]))
-                    ntupleRow["%s.Chg%i" % (i,objCount)] = float(getattr(rtrow, "%sCharge" % orderedFinalObjects[objCount-1]))
-            objStart += numObjects
+        store_state(rtrow,ntupleRow,self.initial_states,objects)
+
+        # alternative state objects
+        if hasattr(self,'other_states'):
+            for state in self.other_states:
+                store_state(rtrow,ntupleRow,state,self.choose_alternative_objects(rtrow,state))
+                
 
         # final state objects
         lepCount = 0

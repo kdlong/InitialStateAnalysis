@@ -32,13 +32,18 @@ class AnalyzerHpp3l(AnalyzerBase):
         self.final_states = ['eee','eem','emm','mmm'] # no tau
         if runTau: self.final_states = ['eee','eem','eet','emm','emt','ett','mmm','mmt','mtt','ttt']
         self.initial_states = ['h1','h2']
+        self.other_states = [['z', 'w']]
         self.object_definitions = {
             'h1': ['em','em'],
             'h2': ['em','n'],
+            'z': ['em','em'],
+            'w': ['em','n'],
         }
         if runTau:
             self.object_definitions['h1'] = ['emt', 'emt']
             self.object_definitions['h2'] = ['emt', 'n']
+            self.object_definitions['z'] = ['emt', 'emt']
+            self.object_definitions['w'] = ['emt', 'n']
         self.cutflow_labels = ['Trigger','Fiducial','Trigger Threshold','ID','Isolation','QCD Suppression']
         super(AnalyzerHpp3l, self).__init__(sample_location, out_file, period)
 
@@ -63,6 +68,29 @@ class AnalyzerHpp3l(AnalyzerBase):
         if not len(cands): return 0
 
         return (cands[0])
+
+    # override choose_alternative_objects
+    def choose_alternative_objects(self, rtrow, state):
+        '''
+        Select alternative candidate.
+        '''
+        # WZ
+        if state == ['z', 'w']:
+            bestZDiff = float('inf')
+            bestLeptons = []
+
+            for l in permutations(self.objects):
+                if lep_order(l[0],l[1]):
+                    continue
+
+                os1 = getattr(rtrow,'%s_%s_SS' % (l[0], l[1])) < 0.5
+                m1 = getattr(rtrow,'%s_%s_Mass' % (l[0], l[1]))
+
+                if l[0][0] == l[1][0] and os1 and abs(m1-ZMASS) < bestZDiff:
+                    bestZDiff = abs(m1-ZMASS)
+                    bestLeptons = l
+
+            return bestLeptons
 
     # overide good_to_store
     @staticmethod

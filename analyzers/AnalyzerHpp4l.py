@@ -33,13 +33,18 @@ class AnalyzerHpp4l(AnalyzerBase):
         if runTau: self.final_states = ['eeee','eeem','eeet','eemm','eemt','eett','emmm','emmt','emtt','ettt',\
                                         'mmmm','mmmt','mmtt','mttt','tttt']
         self.initial_states = ['h1','h2']
+        self.other_states = [['z1','z2']]
         self.object_definitions = {
             'h1': ['em','em'],
             'h2': ['em','em'],
+            'z1': ['em','em'],
+            'z2': ['em','em'],
         }
         if runTau:
             self.object_definitions['h1'] = ['emt', 'emt']
             self.object_definitions['h2'] = ['emt', 'emt']
+            self.object_definitions['z1'] = ['emt', 'emt']
+            self.object_definitions['z2'] = ['emt', 'emt']
         self.cutflow_labels = ['Trigger','Fiducial','Trigger Threshold','ID','Isolation','QCD Suppression']
         super(AnalyzerHpp4l, self).__init__(sample_location, out_file, period)
 
@@ -71,6 +76,47 @@ class AnalyzerHpp4l(AnalyzerBase):
         massdiff, leps = cands[0]
 
         return ([massdiff], leps)
+
+    # override choose_alternative_objects
+    def choose_alternative_objects(self, rtrow, state):
+        '''
+        Select alternative candidate.
+        '''
+        # ZZ
+        if state == ['z1', 'z2']:
+            bestZDiff = float('inf')
+            bestSt = 0
+            bestLeptons = []
+
+            for l in permutations(self.objects):
+                if lep_order(l[0],l[1]) or lep_order(l[2],l[3]):
+                    continue
+
+                os1 = getattr(rtrow,'%s_%s_SS' % (l[0], l[1])) < 0.5
+                m1 = getattr(rtrow,'%s_%s_Mass' % (l[0], l[1]))
+                os2 = getattr(rtrow,'%s_%s_SS' % (l[2], l[3])) < 0.5
+                st2 = getattr(rtrow,'%sPt' %l[2]) + getattr(rtrow,'%sPt' %l[3])
+
+                if l[0][0] == l[1][0] and os1 and l[2][0]==l[3][0] and os2:
+                    if abs(m1-ZMASS) < bestZDiff:
+                        bestZDiff = abs(m1-ZMASS)
+                        bestSt = st2
+                        l0 = l[0] if getattr(rtrow,'%sPt' %l[0]) > getattr(rtrow,'%sPt' %l[1]) else l[1]
+                        l1 = l[1] if getattr(rtrow,'%sPt' %l[0]) > getattr(rtrow,'%sPt' %l[1]) else l[0]
+                        l2 = l[2] if getattr(rtrow,'%sPt' %l[2]) > getattr(rtrow,'%sPt' %l[3]) else l[3]
+                        l3 = l[3] if getattr(rtrow,'%sPt' %l[2]) > getattr(rtrow,'%sPt' %l[3]) else l[2]
+                        bestLeptons = [l0, l1, l2, l3]
+                    elif abs(m1-ZMASS)==bestZDiff and st2>bestSt:
+                        bestZDiff = abs(m1-ZMASS)
+                        bestSt = st2
+                        l0 = l[0] if getattr(rtrow,'%sPt' %l[0]) > getattr(rtrow,'%sPt' %l[1]) else l[1]
+                        l1 = l[1] if getattr(rtrow,'%sPt' %l[0]) > getattr(rtrow,'%sPt' %l[1]) else l[0]
+                        l2 = l[2] if getattr(rtrow,'%sPt' %l[2]) > getattr(rtrow,'%sPt' %l[3]) else l[3]
+                        l3 = l[3] if getattr(rtrow,'%sPt' %l[2]) > getattr(rtrow,'%sPt' %l[3]) else l[2]
+                        bestLeptons = [l0, l1, l2, l3]
+
+            return bestLeptons
+
 
     ###########################
     ### Define preselection ###
@@ -161,7 +207,7 @@ def main(argv=None):
 
     args = parse_command_line(argv)
 
-    analyzer = AnalyzerHpp3l(args.in_sample,args.out_file,args.period)
+    analyzer = AnalyzerHpp4l(args.in_sample,args.out_file,args.period)
     with analyzer as thisAnalyzer:
         thisAnalyzer.analyze()
 

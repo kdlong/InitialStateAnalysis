@@ -25,6 +25,7 @@ class AnalyzerLABEL(AnalyzerBase):
         self.channel = 'LABEL'
         self.final_states = [] # FSA final states
         self.initial_states = [] # custom names for initial states, in order of objects returned in choose_objects
+        #self.other_states = [[]] # optional additional states to build in ntuple, requires definition os choose_alternative_objects
         self.object_definitions = { # definition of initial_states above, can use 'em', 'emt', 'g' (photon), 'j', 'n' (met)
         }
         self.cutflow_labels = [] # optional, length must match preselection cuts
@@ -52,6 +53,10 @@ class AnalyzerLABEL(AnalyzerBase):
         cands.sort(key=lambda x: x[0])
 
         # return selected candidate in form ([minimizing variables list],list(l))
+
+    # optional: override choose_alternative_objects
+    # def choose_alternative_objects(self, rtrow, state):
+    #     if state == [ some alternative state ]
 
     ###########################
     ### Define preselection ###
