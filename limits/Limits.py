@@ -38,20 +38,21 @@ class Limits(object):
         os.system("mkdir -p %s" % self.out_dir)
 
     def getPlotter(self,analysis,runPeriod,mass,runTau,plotName,doFakes):
-        nl = int(analysis[0])
-        ntuples = 'ntuples%s_%stev_%s' % (analysis,runPeriod,analysis)
-        saves = '%s_%s_%sTeV' % (analysis,analysis,runPeriod)
+        nl = 3 if analysis=='Hpp3l' or analysis=='WZ' else 4
+        ntuples = 'ntuples%s_%itev_%s' % (analysis,runPeriod,analysis)
+        saves = '%s_%s_%iTeV' % (analysis,analysis,runPeriod)
         sigMap = getSigMap(nl,mass)
         intLumiMap = getIntLumiMap()
         regionBackground = {
-            '3l' : ['T','TT', 'TTV','Z','VVV','DB'],
-            '4l' : ['TT','Z','DB']
+            'Hpp3l' : ['T','TT', 'TTV','Z','VVV','DB'],
+            'Hpp4l' : ['TT','Z','DB']
         }
+        if runPeriod==13: regionBackground['Hpp3l'] = ['T','TT', 'TTV','Z','DB']
         channels, leptons = getChannels(nl,runTau=runTau)
     
         plotter = FakeRatePlotter(analysis,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName=plotName)
         if not doFakes: plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in regionBackground[analysis]])
-        plotter.initializeDataSamples([sigMap[runPeriod]['data']])
+        if runPeriod==8: plotter.initializeDataSamples([sigMap[runPeriod]['data']])
         plotter.setIntLumi(intLumiMap[runPeriod])
     
         return plotter
@@ -78,13 +79,11 @@ class Limits(object):
 
     def get_var_weights(self, sample, var, cut, scale):
         file = self.ntuple_dir+'/%s.root' % sample
-        eventsfile = self.ntuple_dir+'/%s.num.txt' % sample
-        eventsdata = open(eventsfile)
-        n_evts = eventsdata.readline()
-        eventsdata.close()
+        tfile = ROOT.TFile(file)
+        cutflowHist = tfile.Get('cutflow')
+        n_evts = cutflowHist.GetBinContent(1)
         sample_xsec = self.xsecs[sample]
         samplelumi = float(n_evts)/sample_xsec
-        tfile = ROOT.TFile(file)
         lumiscale = self.lumi/samplelumi
         val = 0
         tree = tfile.Get(self.analysis)
@@ -106,6 +105,7 @@ class Limits(object):
     def gen_card(self, file_name, **kwargs):
         mass = kwargs.pop('mass',500)
         cuts = kwargs.pop('cuts','1')
+        period = kwargs.pop('period',13)
         values = []
         weights = []
 
@@ -125,10 +125,10 @@ class Limits(object):
         maxMass = 800.
         srCut = '(h1.mass>0.9*%f & h1.mass<1.1*%f & h1.mass>%f & h1.mass<%f)' %(mass,mass,minMass,maxMass)
         sbCut = '((h1.mass<150. & h1.mass>%f) ||  (h1.mass>1.1*%f & h1.mass<%f))' %(minMass,mass,maxMass)
-        fullCut = '3l.sT>1.1*%f+60. & fabs(z1.mass-%f)>80. & h1.dPhi<%f/600.+1.95' %(mass,ZMASS,mass)
+        fullCut = '3l.sT>1.1*%f+60. & fabs(z.mass-%f)>80. & h1.dPhi<%f/600.+1.95' %(mass,ZMASS,mass)
         finalSRCut = 'h1.mass>0.9*%f & h1.mass<1.1*%f' %(mass,mass)
 
-        myCut = 'select.passTight'
+        myCut = '1'
 
         plotter = self.getPlotter(self.analysis,self.period,mass,False,'plots_limits_temp',False)
 
@@ -143,8 +143,12 @@ class Limits(object):
         eSR = sum([x[1]*x[1] for x in nSRDict.itervalues()]) ** 0.5
         alpha = nSR/nSB if nSB else nSR
         # TODO: Check this
-        nSBData, eSBData = plotter.getNumEntries('%s&%s&%s&%s' %(myCut,sbCut,fullCut,cuts),*plotter.data,doError=True)
-        nSRData, eSRData = plotter.getNumEntries('%s&%s&%s&%s' %(myCut,finalSRCut,fullCut,cuts),*plotter.data,doError=True)
+        if period == 13:
+            nSBData, eSBData = (0., 0.)
+            nSRData, eSRData = (0., 0.)
+        else:
+            nSBData, eSBData = plotter.getNumEntries('%s&%s&%s&%s' %(myCut,sbCut,fullCut,cuts),*plotter.data,doError=True)
+            nSRData, eSRData = plotter.getNumEntries('%s&%s&%s&%s' %(myCut,finalSRCut,fullCut,cuts),*plotter.data,doError=True)
         nBGSR = alpha*(nSBData+1)
         eBGSR = alpha*((nSBData+1) ** 0.5)
 

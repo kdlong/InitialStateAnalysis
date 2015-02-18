@@ -4,7 +4,6 @@ import logging
 import sys
 import argparse
 import numpy as np
-#from plotters.plotUtils import *
 from plotters.plotUtils import _3L_MASSES, _4L_MASSES, getSigMap, getIntLumiMap, getChannels
 
 logger = logging.getLogger(__name__)
@@ -15,11 +14,11 @@ class Scales(object):
         self.a_3l = np.array([br_ee, br_em, br_et, br_mm, br_mt, br_tt], dtype=float)
         self.m_4l = np.outer(self.a_3l, self.a_3l)
         self.index = {"ee": 0, "em": 1, "et": 2, "mm": 3, "mt": 4, "tt": 5}
-    def scale_4l(self, hpp, hmm):
+    def scale_Hpp4l(self, hpp, hmm):
         i = self.index[hpp]
         j = self.index[hmm]
         return self.m_4l[i,j] * 36.0
-    def scale_3l(self, hpp, hm='a'):
+    def scale_Hpp3l(self, hpp, hm='a'):
         i = self.index[hpp]
         return self.a_3l[i] * 6.0
         
@@ -27,34 +26,34 @@ class Scales(object):
 def limit(analysis,period,mass,**kwargs):
     doChannels = kwargs.pop('doChannels',False)
     name = kwargs.pop('name','card')
-    #scale = kwargs.pop('scale',1.0)
     scale = kwargs.pop('scale',[1.0])
     directory = kwargs.pop('directory','')
     chans = kwargs.pop('channels',['1'])
     mode = kwargs.pop('mode','mc')
     logger.info("Processing mass-point %i" % mass)
 
-    channels, leptons = getChannels(3 if analysis=='3l' else 4)
+    channels, leptons = getChannels(3 if analysis=='Hpp3l' or analysis=='WZ' else 4)
     #cutMap = defineCutFlowMap(analysis,channels,mass)
     ZMASS = 91.1876
     cutMap = {
-        '3l' : {
-             'cuts' : ['select.passTight',\
-                       '3l.sT>1.1*%f+60.' %mass,\
-                       'fabs(z1.mass-%f)>80.' %ZMASS,\
+        'Hpp3l' : {
+             'cuts' : ['1',\
+                       'finalstate.sT>1.1*%f+60.' %mass,\
+                       'fabs(z.mass-%f)>80.' %ZMASS,\
                        'h1.dPhi<%f/600.+1.95' %mass,\
                        'h1.mass>0.9*%f & h1.mass<1.1*%f' %(mass,mass)],
              'labels' : ['Preselection','s_{T}','Z Veto','#Delta#phi','Mass window']
         },
-        '4l' : {
-             'cuts' : ['select.passTight',\
-                       '4l.sT>0.6*%f+130.' %mass,\
+        'Hpp4l' : {
+             'cuts' : ['1',\
+                       'finalstate.sT>0.6*%f+130.' %mass,\
                        'h1.mass>0.9*%f & h1.mass<1.1*%f' %(mass,mass)],
              'labels' : ['Preselection','s_{T}','Mass window']
         }
     }
 
-    sigMap = getSigMap(int(analysis[0]),mass)
+    nl = 3 if analysis=='Hpp3l' or analysis=='WZ' else 4
+    sigMap = getSigMap(nl,mass)
     intLumiMap = getIntLumiMap()
 
     cuts = '&&'.join(cutMap[analysis]['cuts'])
@@ -68,11 +67,11 @@ def limit(analysis,period,mass,**kwargs):
 
     signal =  sigMap[period]['Sig']
     if mode=='mc':
-        add_systematics_mc(limits,mass,signal,name,chans,scale)
+        add_systematics_mc(limits,mass,signal,name,chans,scale,period)
     elif mode=='sideband':
-        add_systematics_sideband(limits,mass,signal,name,chans,scale)
+        add_systematics_sideband(limits,mass,signal,name,chans,scale,period)
     elif mode=='fakerate':
-        add_systematics_fakerate(limits,mass,signal,name,chans,scale)
+        add_systematics_fakerate(limits,mass,signal,name,chans,scale,period)
     else:
         return 0
 
@@ -96,13 +95,13 @@ def BP(analysis,period,mass,bp,**kwargs):
     logger.info("Processing branching point %s" % bp)
     sf = getattr(s,'scale_%s'%analysis)
     chanMap = {
-        '3l': {
+        'Hpp3l': {
              'names': ['ee','em','mm'],
              'ee'   : ['eee','eem'],
              'em'   : ['eme','emm','mee','mem'],
              'mm'   : ['mme','mmm'],
         },
-        '4l': {
+        'Hpp4l': {
              'names': ['eeee','eeem','eemm','emem','emmm','mmmm'],
              'eeee' : ['eeee'],
              'eeem' : ['eeem','eeme','emee','meee'],
@@ -127,20 +126,21 @@ def BP(analysis,period,mass,bp,**kwargs):
         chanScales += [thisScale]
     limit(analysis,period,mass,name=bp,directory=bp,channels=chanCuts,scale=chanScales,**kwargs)
 
-def add_systematics_mc(limits,mass,signal,name,chans,sigscale):
+def add_systematics_mc(limits,mass,signal,name,chans,sigscale,period):
     limits.add_group("hpp%i" % mass, signal, scale=sigscale, isSignal=True)
-    limits.add_group("dyjets", "Z*j*")
+    if period=='8': limits.add_group("dyjets", "Z*j*")
+    if period=='13': limits.add_group("dyjets", "DY*")
     limits.add_group("zz", "ZZJ*")
     limits.add_group("wz", "WZJ*")
-    limits.add_group("ww", "WWJ*")
-    limits.add_group("zzz", "ZZZ*")
-    limits.add_group("wwz", "WWZ*")
-    limits.add_group("www", "WWW*")
-    limits.add_group("top", "T[bar]_*")
+    if period=='8': limits.add_group("ww", "WWJ*")
+    if period=='8': limits.add_group("zzz", "ZZZ*")
+    if period=='8': limits.add_group("wwz", "WWZ*")
+    if period=='8': limits.add_group("www", "WWW*")
+    limits.add_group("top", "T[(B|b)ar]_*")
     limits.add_group("tt", "TTJ*")
     limits.add_group("ttz", "TTZJ*")
     limits.add_group("ttw", "TTWJ*")
-    limits.add_group("data", "data_R*", isData=True)
+    if period=='8': limits.add_group("data", "data_R*", isData=True)
 
     lumi = {
         'hpp%i' % mass: 1.026,
@@ -228,7 +228,7 @@ def add_systematics_mc(limits,mass,signal,name,chans,sigscale):
 
     limits.gen_card("%s.txt" % name,mass=mass,cuts=chans)
 
-def add_systematics_sideband(limits,mass,signal,name,chans,sigscale):
+def add_systematics_sideband(limits,mass,signal,name,chans,sigscale,period):
     limits.add_group("hpp%i" % mass, signal, scale=sigscale, isSignal=True)
     limits.add_group("bg", "bg")
     limits.add_group("data", "data_R*", isData=True)
@@ -254,7 +254,7 @@ def add_systematics_sideband(limits,mass,signal,name,chans,sigscale):
 
     limits.gen_card("%s.txt" % name,mass=mass,cuts=chans)
 
-def add_systematics_fakerate(limits,mass,signal,name,chans,sigscale):
+def add_systematics_fakerate(limits,mass,signal,name,chans,sigscale,period):
     limits.add_group("hpp%i" % mass, signal, scale=sigscale, isSignal=True)
     limits.add_group("data", "data_R*", isData=True)
 
