@@ -276,7 +276,7 @@ def parse_command_line(argv):
     parser = argparse.ArgumentParser(description="Produce datacards")
 
     parser.add_argument('region', type=str, choices=['3l','4l'], help='Analysis to run')
-    parser.add_argument('period', type=int, choices=[7, 8, 13], help='Run period')
+    parser.add_argument('period', type=int, choices=[7, 8, 13], help='Energy (TeV)')
     parser.add_argument('-m','--mass',nargs='?',type=int,const=500,default=500)
     parser.add_argument('-am','--allMasses',action='store_true',help='Run over all masses')
     parser.add_argument('-bp','--branchingPoint',nargs='?',type=str,const='BP4',default='BP4',choices=['ee100','em100','mm100','BP1','BP2','BP3','BP4'],help='Choose branching point')

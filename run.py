@@ -129,7 +129,7 @@ def parse_command_line(argv):
 
     parser.add_argument('analysis', type=str, choices=['WZ','Hpp3l','Hpp4l'], help='Analysis to run')
     parser.add_argument('channel', type=str, choices=['WZ','Hpp3l','Hpp4l'], help='Channel to run for given analysis')
-    parser.add_argument('period', type=str, choices=['7','8','13'], help='7, 8, 13')
+    parser.add_argument('period', type=str, choices=['7','8','13'], help='Energy (TeV)')
     parser.add_argument('sample_names', nargs='+',help='Sample names w/ UNIX wildcards')
     parser.add_argument('-s','--submit',action='store_true',help='Submit jobs to condor')
     parser.add_argument('-jn','--jobName',nargs='?',type=str,const='',help='Job Name for condor submission')
