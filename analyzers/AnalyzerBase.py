@@ -243,6 +243,8 @@ class AnalyzerBase(object):
         ntupleRow["event.nvtx"] = int(rtrow.nvtx)
         #ntupleRow["event.lep_scale"] = float(self.lepscaler.scale_factor(rtrow, *objects, tight=True))
         #ntupleRow["event.pu_weight"] = float(self.pu_weights.weight(rtrow))
+        ntupleRow["event.lep_scale"] = float(1.)
+        ntupleRow["event.pu_weight"] = float(1.)
 
         channelString = ''
         for x in objects: channelString += x[0]
