@@ -34,9 +34,10 @@ from pu_weights import PileupWeights
 import leptonId as lepId
 from ntuples import *
 
+sys.argv.append('-b')
 import ROOT as rt
+sys.argv.pop()
 
-rt.gROOT.SetBatch(rt.kTRUE)
 
 ZMASS = 91.1876
 
