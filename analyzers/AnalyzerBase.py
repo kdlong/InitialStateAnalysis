@@ -29,8 +29,8 @@ import sys
 from itertools import permutations, combinations
 import argparse
 
-from scale_factors import LeptonScaleFactors
-from pu_weights import PileupWeights
+#from scale_factors import LeptonScaleFactors
+#from pu_weights import PileupWeights
 import leptonId as lepId
 from ntuples import *
 
@@ -86,8 +86,8 @@ class AnalyzerBase(object):
         self.finish()
 
     def begin(self):
-        self.lepscaler = LeptonScaleFactors()
-        self.pu_weights = PileupWeights()
+        #self.lepscaler = LeptonScaleFactors()
+        #self.pu_weights = PileupWeights()
 
         self.file = rt.TFile(self.out_file, 'recreate')
         
@@ -231,8 +231,8 @@ class AnalyzerBase(object):
         ntupleRow["event.lumi"] = int(rtrow.lumi)
         ntupleRow["event.run"] = int(rtrow.run)
         ntupleRow["event.nvtx"] = int(rtrow.nvtx)
-        ntupleRow["event.lep_scale"] = float(self.lepscaler.scale_factor(rtrow, *objects, tight=True))
-        ntupleRow["event.pu_weight"] = float(self.pu_weights.weight(rtrow))
+        #ntupleRow["event.lep_scale"] = float(self.lepscaler.scale_factor(rtrow, *objects, tight=True))
+        #ntupleRow["event.pu_weight"] = float(self.pu_weights.weight(rtrow))
 
         channelString = ''
         for x in objects: channelString += x[0]
