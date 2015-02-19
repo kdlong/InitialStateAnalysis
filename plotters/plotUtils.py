@@ -20,49 +20,49 @@ def python_mkdir(dir):
 
 def defineCutFlowMap(region,channels,mass):
     # define regions (based on number of taus in higgs candidate)
-    regionMap = { '3l' : {}, '4l' : {} }
-    regionMap['3l'][0] = {
-        'st' : '3l.sT>1.1*%f+60.' %mass,
-        'zveto' : 'fabs(z1.mass-%f)>80.' %ZMASS,
+    regionMap = { 'Hpp3l' : {}, 'Hpp4l' : {} }
+    regionMap['Hpp3l'][0] = {
+        'st' : 'finalstate.sT>1.1*%f+60.' %mass,
+        'zveto' : 'fabs(z.mass-%f)>80.' %ZMASS,
         'met' : None,
         'dphi' : 'hN.dPhi<%f/600.+1.95' %mass,
         'mass' : 'hN.mass>0.9*%f&&hN.mass<1.1*%f' %(mass,mass)
     }
-    regionMap['3l'][1] = {
-        'st' : '3l.sT>0.85*%f+125.' %mass,
-        'zveto' : 'fabs(z1.mass-%f)>80.' %ZMASS,
-        'met' : '3l.met>20.',
+    regionMap['Hpp3l'][1] = {
+        'st' : 'finalstate.sT>0.85*%f+125.' %mass,
+        'zveto' : 'fabs(z.mass-%f)>80.' %ZMASS,
+        'met' : 'finalstate.met>20.',
         'dphi' : 'hN.dPhi<%f/200.+1.15' %mass,
         'mass' : 'hN.mass>0.5*%f&&hN.mass<1.1*%f' %(mass,mass)
     }
-    regionMap['3l'][2] = {
-        'st' : '(3l.sT>%f-10||3l.sT>200.)' %mass,
+    regionMap['Hpp3l'][2] = {
+        'st' : '(finalstate.sT>%f-10||finalstate.sT>200.)' %mass,
         'zveto' : 'fabs(z1.mass-%f)>50.' %ZMASS,
-        'met' : '3l.met>20.',
+        'met' : 'finalstate.met>20.',
         'dphi' : 'hN.dPhi<2.1',
         'mass' : 'hN.mass>0.5*%f-20.&&hN.mass<1.1*%f' %(mass,mass)
     }
-    regionMap['4l'][0] = {
-        'st' : '4l.sT>0.6*%f+130.' %mass,
+    regionMap['Hpp4l'][0] = {
+        'st' : 'finalstate.sT>0.6*%f+130.' %mass,
         'zveto' : None,
         'dphi' : None,
         'mass' : 'hN.mass>0.9*%f&&hN.mass<1.1*%f' %(mass,mass)
     }
-    regionMap['4l'][1] = {
-        'st' : '(4l.sT>%f+100.||4l.sT>400.)' %mass,
+    regionMap['Hpp4l'][1] = {
+        'st' : '(finalstate.sT>%f+100.||4l.sT>400.)' %mass,
         'zveto' : 'fabs(z1.mass-%f)>10.' %ZMASS,
         'dphi' : None,
         'mass' : 'hN.mass>0.5*%f&&hN.mass<1.1*%f' %(mass,mass)
     }
-    regionMap['4l'][2] = {
-        'st' : '4l.sT>120.',
+    regionMap['Hpp4l'][2] = {
+        'st' : 'finalstate.sT>120.',
         'zveto' : 'fabs(z1.mass-%f)>50.' %ZMASS,
         'dphi' : 'hN.dPhi<2.5',
         'mass' : None
     }
     # define cutmap to be returned
     cutMap = { 'cuts' : [], 'labels': [], 'labels_simple': [], 'preselection': [] }
-    if region == '3l':
+    if region == 'Hpp3l':
         cutMap['labels'] = ['Preselection','s_{T}','Z Veto','E_{T}^{miss}','#Delta#phi','Mass window']
         cutMap['labels_simple'] = ['Preselection','sT','Z Veto','MET','dPhi','Mass window']
         cutMap['preselection'] = ['All events', 'Three Lepton', 'Trigger', 'Fiducial',\
@@ -74,7 +74,7 @@ def defineCutFlowMap(region,channels,mass):
                  'met' : '',
                  'dphi' : '',
                  'mass' : '' }
-    elif region == '4l':
+    elif region == 'Hpp4l':
         cutMap['labels'] = ['Preselection','s_{T}','Z Veto','#Delta#phi','Mass window']
         cutMap['labels_simple'] = ['Preselection','sT','Z Veto','dPhi','Mass window']
         cutMap['preselection'] = ['All events', 'Four Lepton', 'Trigger', 'Fiducial',\
@@ -89,7 +89,7 @@ def defineCutFlowMap(region,channels,mass):
         cutMap['cuts'] = '1'
         cutMap['labels'] = ['%s Full Selection' %region]
         cutMap['labels_simple'] = [region]
-    if region not in ['3l','4l']: return cutMap
+    if region not in ['Hpp3l','Hpp4l']: return cutMap
     usedLepPairs = []
     for channel in channels:
         lepPairs = [channel[:2]]
@@ -120,9 +120,9 @@ def defineCutFlowMap(region,channels,mass):
         else:
             cuts[cut] = '(%s)' % cuts[cut]
 
-    if region == '3l':
+    if region == 'Hpp3l':
         cutMap['cuts'] = [cuts['pre'], cuts['st'], cuts['zveto'], cuts['met'], cuts['dphi'], cuts['mass']]
-    if region == '4l':
+    if region == 'Hpp4l':
         cutMap['cuts'] = [cuts['pre'], cuts['st'], cuts['zveto'], cuts['dphi'], cuts['mass']]
     return cutMap
 
