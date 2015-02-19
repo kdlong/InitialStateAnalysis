@@ -9,18 +9,10 @@ interesting variables in an output ntuple for further selection.
 Installation
 ------------
 
-Setup FSA in a recent CMSSW release (being certain to install python modules in recipe).
-The FSA dependency is for convenience. The python dependencies can also be isntalled via
-[recipe/setup.sh](recipe/setup.sh).
-
-```
-cd recipe
-./setup.sh
-```
-
-However, the lepton scalefactors from 2012 data are currently only in FSA, so the relevant parts
-of [analyzers/AnalyzerBase.py](analyzers/AnalyzerBase.py) must be commented out for CMSSW independent
-running.
+ISA can run independent of CMSSW and only requires python 2.7 (or argparse with python 2.6)
+and ROOT. The setup script is unecessary at the moment. To run limits you must create a 
+`CMSSW_7_1_5` release. Note: lepton scale factors do have some dependence on FSA. These are
+currently disabled.
 
 Analyzing data
 --------------
