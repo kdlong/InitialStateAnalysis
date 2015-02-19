@@ -57,7 +57,27 @@ Plotting can be accomplished via the [mkplots.py](mkplots.py) command:
 Limits
 ------
 
-Limits can be run via [mklimits.py](mklimits.py). This requires a CMSSW_6_1_1 release.
+Limits can be run via [mklimits.py](mklimits.py). This produces datacards able to be read by the 
+`HiggsAnalysis/CombinedLimit` module. Documentation and how to setup a release can be found 
+<a href="https://twiki.cern.ch/twiki/bin/viewauth/CMS/SWGuideHiggsAnalysisCombinedLimit#For_end_users_that_don_t_need_to">here</a>. 
+This requires a `CMSSW_7_1_5` release (or greater in 71X, not 70X or 72X).
+
+The [mklimits.py](mklimits.py) script can produce limits using three different methods: a purely MC driven
+method that estimates background from MC samples (default), a data-driven method with a user defined
+sideband and signal region, and a fakerate method (requires the fakerate option on the ntuple production, TODO).
+
+```
+# Usage: ./mklimits [analysis] [period] [options]
+./mklimits.py Hpp4l 13
+```
+
+The datacards can then be processed with the [processdatacards.py](processdatacards.py) script:
+
+```
+TODO
+```
+
+And finally, the limits can be plotted with [plotlimits.py](plotlimits.py):
 
 ```
 TODO
