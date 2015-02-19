@@ -66,7 +66,7 @@ sideband and signal region, and a fakerate method (requires the fakerate option 
 The datacards can then be processed with the [processdatacards.py](processdatacards.py) script:
 
 ```
-TODO
+./processdatacards.py Hpp4l 13 /cms/dntaylor/ISA/CMSSW_7_1_5/src/ -ab
 ```
 
 And finally, the limits can be plotted with [plotlimits.py](plotlimits.py):
