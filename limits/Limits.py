@@ -45,9 +45,10 @@ class Limits(object):
         intLumiMap = getIntLumiMap()
         regionBackground = {
             'Hpp3l' : ['T','TT', 'TTV','Z','VVV','DB'],
-            'Hpp4l' : ['TT','Z','DB']
+            'Hpp4l' : ['T','TT', 'TTV','Z','VVV','DB']
         }
         if runPeriod==13: regionBackground['Hpp3l'] = ['T','TT', 'TTV','Z','DB']
+        if runPeriod==13: regionBackground['Hpp4l'] = ['T','TT', 'TTV','Z','DB']
         channels, leptons = getChannels(nl,runTau=runTau)
     
         plotter = FakeRatePlotter(analysis,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName=plotName)
@@ -88,7 +89,7 @@ class Limits(object):
         val = 0
         tree = tfile.Get(self.analysis)
         tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale*(%s)' %cut,'goff')
-        if not ROOT.gDirectory.Get("h%s" %sample): return 0
+        if not ROOT.gDirectory.Get("h%s" %sample): return [0,0]
         hist = ROOT.gDirectory.Get("h%s" %sample).Clone("hnew%s" %sample)
         hist.Sumw2()
         val = hist.Integral()
@@ -127,6 +128,7 @@ class Limits(object):
         sbCut = '((h1.mass<150. & h1.mass>%f) ||  (h1.mass>1.1*%f & h1.mass<%f))' %(minMass,mass,maxMass)
         fullCut = '3l.sT>1.1*%f+60. & fabs(z.mass-%f)>80. & h1.dPhi<%f/600.+1.95' %(mass,ZMASS,mass)
         finalSRCut = 'h1.mass>0.9*%f & h1.mass<1.1*%f' %(mass,mass)
+        # TODO: change for 4l
 
         myCut = '1'
 

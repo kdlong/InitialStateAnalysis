@@ -119,7 +119,7 @@ def BP(analysis,period,mass,bp,**kwargs):
     chanCuts = []
     chanScales = []
     for c in chanMap[analysis]['names']:
-        thisScale = sf(c[:2],c[3:])
+        thisScale = sf(c[:2],c[2:])
         if thisScale==0: continue
         chanCut = '('+'||'.join(['channel=="%s"'%x for x in chanMap[analysis][c]])+')'
         chanCuts += [chanCut]
