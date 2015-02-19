@@ -66,11 +66,13 @@ sideband and signal region, and a fakerate method (requires the fakerate option 
 The datacards can then be processed with the [processdatacards.py](processdatacards.py) script:
 
 ```
-./processdatacards.py Hpp4l 13 /cms/dntaylor/ISA/CMSSW_7_1_5/src/ -ab
+# Usage: ./processdatacards.py [analysis] [period] [HiggsCombine CMSSW Release base] [options]
+./processdatacards.py Hpp4l 13 /cms/dntaylor/ISA/CMSSW_7_1_5/src/
 ```
 
 And finally, the limits can be plotted with [plotlimits.py](plotlimits.py):
 
 ```
-TODO
+# Usage: ./plotlimits.py [analysis] [period] [options]
+./plotlimits.py Hpp3l 13 -bp ee100
 ```

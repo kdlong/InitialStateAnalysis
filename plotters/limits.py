@@ -7,9 +7,13 @@ import os
 import errno
 import numpy as np
 import CMS_lumi, tdrstyle
-import ROOT
 from plotUtils import _3L_MASSES, _4L_MASSES, python_mkdir
 
+sys.argv.append('-b')
+import ROOT
+sys.argv.pop()
+
+ROOT.PyConfig.IgnoreCommandLineOptions = True
 ROOT.gROOT.SetBatch(ROOT.kTRUE)
 ROOT.gROOT.ProcessLine("gErrorIgnoreLevel = 1001;")
 tdrstyle.setTDRStyle()
@@ -38,7 +42,8 @@ def plot_limits(analysis, period, savename, **kwargs):
     limitDataDir = '%s/%s_%itev' % (limitDataBaseDir, analysis, period)
     if bp: limitDataDir += '/%s' % bp
 
-    masses = _3L_MASSES if analysis == '3l' else _4L_MASSES
+    masses = _3L_MASSES if analysis == 'Hpp3l' else _4L_MASSES
+    if period==13: masses = [500]
     quartiles = np.empty((6, len(masses)), dtype=float)
 
     for j, mass in enumerate(masses):
