@@ -28,6 +28,7 @@ class AnalyzerHpp4l(AnalyzerBase):
 
     def __init__(self, sample_location, out_file, period, **kwargs):
         runTau = kwargs.pop('runTau',False)
+        runTau = True
         self.channel = 'Hpp4l'
         self.final_states = ['eeee','eeem','eemm','emmm','mmmm'] # no tau
         if runTau: self.final_states = ['eeee','eeem','eeet','eemm','eemt','eett','emmm','emmt','emtt','ettt',\

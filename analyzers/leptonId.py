@@ -39,11 +39,11 @@ def lep_id(rtrow, period, *lep, **kwargs):
     elif wzloose:
         elec_method = 'elec_WZ_loose'
         muon_method = 'muon_WZ_loose'
-        tau_method  = 'tau_id_loose'
+        tau_method  = 'tau_id'
     elif wzloosenoiso:
         elec_method = 'elec_WZ_loose'
         muon_method = 'muon_WZ_loose_noiso'
-        tau_method  = 'tau_id_loose'
+        tau_method  = 'tau_id'
     elif wztight:
         elec_method = 'elec_WZ_tight'
         muon_method = 'muon_WZ_tight'
@@ -83,14 +83,9 @@ def elec_id_cbid_mva(rtrow,l,period,cbid,mva):
 def tau_id(rtrow, l, period):
     antiElec = getattr(rtrow, "%sAntiElectronTight" % l)
     antiMuon = getattr(rtrow, "%sAntiMuon3Tight" % l)
-    id3Hits  = getattr(rtrow, "%sTightIso3Hits" %l)
-    return all([antiElec, antiMuon, id3Hits])
-
-def tau_id_loose(rtrow, l, period):
-    antiElec = getattr(rtrow, "%sAntiElectronLoose" % l)
-    antiMuon = getattr(rtrow, "%sAntiMuon3Loose" % l)
-    id3Hits  = getattr(rtrow, "%sLooseIso3Hits" %l)
-    return all([antiElec, antiMuon, id3Hits])
+    id3Hits  = getattr(rtrow, "%sVTightIsoMVA3NewDMLT" %l)
+    decayFind = getattr(rtrow, "%sDecayFinding" %l)
+    return all([antiElec, antiMuon, id3Hits, decayFind])
 
 def muon_id(rtrow, l, period):
     dz = abs(getattr(rtrow, "%sPVDZ" % l)) < 1.0
