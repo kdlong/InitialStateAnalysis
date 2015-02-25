@@ -16,8 +16,12 @@ class AnalyzerLABEL(AnalyzerBase):
         define in object_definitions
     Minimization function:
         define in choose_objects
-    Selection:
+    Loose Selection:
         define in preselection
+    Tight selection:
+        define in selection
+    Tight ID:
+        define in getIdArgs
     '''
 
     def __init__(self, sample_location, out_file, period):
@@ -66,6 +70,18 @@ class AnalyzerLABEL(AnalyzerBase):
         # TODO: define cuts
         #cuts.add(function)
         return cuts
+
+    def selection(self,rtrow):
+        cuts = CutSequence()
+        # TODO: define cuts
+        #cuts.add(function)
+        return cuts
+
+    def getIdArgs(self,type):
+        kwargs = {}
+        if type=='Tight'
+           # TODO: define tight ID (with isolation)
+        return kwargs
 
 ##########################
 ###### Command line ######

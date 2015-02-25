@@ -3,11 +3,12 @@ Utilities for building ntuples used in ISA.
 
 Author: Devin N. Taylor, UW-Madison
 '''
+from itertools import product
 
 import ROOT as rt
 from array import array
 
-def buildNtuple(object_definitions,states,channelName):
+def buildNtuple(object_definitions,states,channelName,final_states):
     '''
     A function to build an initial state ntuple for AnalyzerBase.py
     '''
@@ -15,6 +16,33 @@ def buildNtuple(object_definitions,states,channelName):
     finalStateObjects = 'emtjgn'
     structureDict = {}
     structOrder = []
+
+    # define selection bools and fake rate things
+    numObjs = len(final_states[0])
+    allowedObjects = ''
+    for fsObj in finalStateObjects:
+        for fs in final_states:
+            if fsObj in fs:
+                allowedObjects += fsObj
+                break
+    numObjTypes = len(allowedObjects)
+    strToProcess = "struct structSelect_t {"
+    strForBranch = ""
+    strToProcess += "Int_t passTight;"
+    strForBranch += "passTight/I:"
+    strToProcess += "Int_t passLoose;"
+    strForBranch += "passLoose:"
+    for prompts in list(product(range(numObjs+1),repeat=numObjTypes)):
+        if sum(prompts) > numObjs: continue
+        promptString = ''.join([str(x) for x in prompts])
+        strToProcess += "Int_t pass_%s;" % promptString
+        strForBranch += "pass_%s:" % promptString
+    strToProcess += "};"
+    strForBranch = strForBranch[:-1] # remove trailing :
+    rt.gROOT.ProcessLine(strToProcess)
+    selectStruct = rt.structSelect_t()
+    structureDict['select'] = [selectStruct, selectStruct, strForBranch]
+    structOrder += ['select']    
 
     # define common root classes
     rt.gROOT.ProcessLine(

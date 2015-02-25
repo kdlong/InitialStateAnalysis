@@ -46,7 +46,7 @@ class AnalyzerHpp4l(AnalyzerBase):
             self.object_definitions['h2'] = ['emt', 'emt']
             self.object_definitions['z1'] = ['emt', 'emt']
             self.object_definitions['z2'] = ['emt', 'emt']
-        self.cutflow_labels = ['Trigger','Fiducial','Trigger Threshold','ID','Isolation','QCD Suppression']
+        self.cutflow_labels = ['Trigger','Fiducial','Trigger Threshold','ID','QCD Suppression']
         super(AnalyzerHpp4l, self).__init__(sample_location, out_file, period)
 
     ###############################
@@ -119,10 +119,42 @@ class AnalyzerHpp4l(AnalyzerBase):
         cuts.add(self.trigger)
         cuts.add(self.fiducial)
         cuts.add(self.trigger_threshold)
-        cuts.add(self.ID_tight_noiso)
-        cuts.add(self.isolation)
+        cuts.add(self.ID_loose)
         cuts.add(self.qcd_rejection)
         return cuts
+
+    def selection(self,rtrow):
+        cuts = CutSequence()
+        cuts.add(self.trigger)
+        cuts.add(self.fiducial)
+        cuts.add(self.trigger_threshold)
+        cuts.add(self.ID_tight)
+        cuts.add(self.qcd_rejection)
+        return cuts
+
+    def getIdArgs(self,type):
+        kwargs = {}
+        if type=='Tight':
+            kwargs['idDef'] = {
+                'e':'Medium',
+                'm':'Tight',
+                't':'Tight'
+            }
+            kwargs['isoCut'] = {
+                'e':0.15,
+                'm':0.12
+            }
+        if type=='Loose':
+            kwargs['idDef'] = {
+                'e':'Loose',
+                'm':'Loose',
+                't':'Loose'
+            }
+            kwargs['isoCut'] = {
+                'e':0.2,
+                'm':0.2
+            }
+        return kwargs
 
     def trigger(self, rtrow):
         triggers = ["mu17ele8isoPass", "mu8ele17isoPass",
@@ -155,21 +187,11 @@ class AnalyzerHpp4l(AnalyzerBase):
                 return False
         return True
 
-    def ID_tight_noiso(self, rtrow):
-        return self.ID(rtrow,cbid='Tight',mva='Trig',*self.objects)
+    def ID_loose(self, rtrow):
+        return self.ID(rtrow,*self.objects,**self.getIdArgs('Loose'))
 
-    def isolation(self, rtrow):
-        for l in self.objects:
-            if l[0] == 'e':
-                isotype = "RelPFIsoRho"
-                isocut = 0.15
-            if l[0] == 'm':
-                isotype = "RelPFIsoDBDefault"
-                isocut = 0.12
-            if l[0] == 't': continue # no iso cut on tau
-            if getattr(rtrow, '%s%s' %(l,isotype)) > isocut: return False
-
-        return True
+    def ID_tight(self, rtrow):
+        return self.ID(rtrow,*self.objects,**self.getIdArgs('Tight'))
 
     def trigger_threshold(self, rtrow):
         pts = [getattr(rtrow, "%sPt" % l) for l in self.objects]

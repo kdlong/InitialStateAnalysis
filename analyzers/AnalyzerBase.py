@@ -95,7 +95,7 @@ class AnalyzerBase(object):
             states = [self.initial_states] + self.other_states
         else:
             states = [self.initial_states]
-        self.ntuple, self.branches = buildNtuple(self.object_definitions,states,self.channel)
+        self.ntuple, self.branches = buildNtuple(self.object_definitions,states,self.channel,self.final_states)
 
     def analyze(self,**kwargs):
         '''
@@ -236,6 +236,26 @@ class AnalyzerBase(object):
         Function to return a dictionary of event values to be written to the ntuple.
         '''
         ntupleRow = {}
+
+        ntupleRow["select.passTight"] = int(self.pass_selection(rtrow))
+        ntupleRow["select.passLoose"] = int(self.pass_preselection(rtrow))
+        numObjs = len(self.final_states[0])
+        finalStateObjects ='emtjgn'
+        allowedObjects = ''
+        for fsObj in finalStateObjects:
+            for fs in self.final_states:
+                if fsObj in fs:
+                    allowedObjects += fsObj
+                    break
+        numObjTypes = len(allowedObjects)
+        for prompts in list(product(range(numObjs+1),repeat=numObjTypes)):
+            if sum(prompts) > numObjs: continue
+            promptString = ''.join([str(x) for x in prompts])
+            promptDict = {}
+            for o in range(len(allowedObjects)):
+                promptDict[allowedObjects[o]] = prompts[o]
+            ntupleRow["select.pass_%s"%promptString] = int(self.npass(rtrow,promptDict,**self.getIdArgs('Tight')))
+
         
         ntupleRow["event.evt"] = int(rtrow.evt)
         ntupleRow["event.lumi"] = int(rtrow.lumi)
@@ -347,34 +367,70 @@ class AnalyzerBase(object):
         if 'preselection' in self.cache: return self.cache['preselection']
         cuts = self.preselection(rtrow)
         cutResults,self.num = cuts.evaluate(rtrow)
+        self.cache['preselection'] = cutResults
+        return cutResults
+
+    def pass_selection(self,rtrow):
+        '''
+        Wrapper for the selection defined by the user (tight selection whereas preselection
+        is the loose selection for fake rate method).
+        '''
+        if 'selection' in self.cache: return self.cache['selection']
+        cuts = self.selection(rtrow)
+        cutResults,self.num = cuts.evaluate(rtrow)
         self.cache['selection'] = cutResults
         return cutResults
+
+    def npass(self,rtrow,numObjects,**kwargs):
+        '''
+        Get the number that pass the full selection for fake rate method.
+        numObjects is dictionary with structure:
+          numObjects = {
+            'e': ne,
+            'm': nm,
+            't': nt,
+            ...
+          }
+        All keys are optional, if a key is not present the number is assumed to be zero
+        and no check will be performed. keys = ['e', 'm', 't', 'j', 'g']
+        kwargs are the arguments for the ID definition.
+        '''
+        passLoose = self.pass_preselection(rtrow)
+        if not passLoose: return False
+        for obj, num in numObjects.iteritems():
+            if self.numPassID(rtrow,obj,**kwargs)!=num: return False
+        return True
+
+    def numPassID(self,rtrow,flav,**kwargs):
+        '''
+        Uses self.ID() to count number of a given object that pass the ID.
+        '''
+        num = 0
+        for obj in self.objects:
+            if obj[0]==flav:
+                num += self.ID(rtrow,obj,**kwargs)
+        return num
 
     def ID(self,rtrow,*objects,**kwargs):
         '''
         An ID accessor method.
         '''
-        type = kwargs.pop('id','')
-        cbid = kwargs.pop('cbid','')
-        mva = kwargs.pop('mva','')
-        if not type: type = '%s_%s' % (cbid, mva)
+        idDef = kwargs.pop('idDef',{})
+        isoCut = kwargs.pop('isoCut',{})
         for obj in objects:
+            type = idDef[obj[0]]
             if 'ID_%s_%s' %(type,obj) in self.cache:
                 if not self.cache['ID_%s_%s'%(type,obj)]: return False
             else:
-                if type=='wzloose':
-                    result = lepId.lep_id(rtrow,self.period,obj,wzloose=True)
-                elif type=='wztight':
-                    result = lepId.lep_id(rtrow,self.period,obj,wztight=True)
-                elif type=='wzloosenoiso':
-                    result = lepId.lep_id(rtrow,self.period,obj,wzloosenoiso=True)
-                elif type=='wztightnoiso':
-                    result = lepId.lep_id(rtrow,self.period,obj,wztightnoiso=True)
-                elif cbid or mva:
-                    result = lepId.lep_id(rtrow,self.period,obj,cbid=cbid,mva=mva)
-                else:
-                    print 'Error: unknow ID %s' % type
-                    result = 0
+                result = lepId.lep_id(rtrow,self.period,obj,idType=idDef[obj[0]])
                 self.cache['ID_%s_%s'%(type,obj)] = result
                 if not result: return False
+        if isoCut:
+            for obj in objects:
+                if obj[0] == 'e':
+                    isotype = "RelPFIsoRho"
+                if obj[0] == 'm':
+                    isotype = "RelPFIsoDBDefault"
+                if obj[0] in 'tjgn': continue # no iso cut on tau
+                if getattr(rtrow, '%s%s' %(obj,isotype)) > isoCut[obj[0]]: return False
         return True

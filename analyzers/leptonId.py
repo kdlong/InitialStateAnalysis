@@ -12,122 +12,47 @@ sys.argv.pop()
 
 
 def lep_id(rtrow, period, *lep, **kwargs):
-    control = kwargs.get('control', False)
-    tight = kwargs.get('tight', False)
-    wzloose = kwargs.get('wzloose', False)
-    wzloosenoiso = kwargs.get('wzloosenoiso', False)
-    wztight = kwargs.get('wztight', False)
-    wztightnoiso = kwargs.get('wztightnoiso', False)
-    cbid = kwargs.get('cbid','')
-    mva = kwargs.get('mva','')
+    idType = kwargs.get('idType','')
 
-    if cbid or mva:
+    if idType:
         for l in lep:
-            if l[0]=='e':
-                if not elec_id_cbid_mva(rtrow,l,period,cbid,mva): return False
-            if l[0]=='m':
-                if not muon_id_tight(rtrow,l,period): return False
-            if l[0]=='t':
-                if not tau_id(rtrow,l,period): return False
-        return True
-            
-
-    if tight:
-        elec_method = 'elec_id_tight'
-        muon_method = 'muon_id_tight'
-        tau_method  = 'tau_id'
-    elif wzloose:
-        elec_method = 'elec_WZ_loose'
-        muon_method = 'muon_WZ_loose'
-        tau_method  = 'tau_id'
-    elif wzloosenoiso:
-        elec_method = 'elec_WZ_loose'
-        muon_method = 'muon_WZ_loose_noiso'
-        tau_method  = 'tau_id'
-    elif wztight:
-        elec_method = 'elec_WZ_tight'
-        muon_method = 'muon_WZ_tight'
-        tau_method  = 'tau_id'
-    elif wztightnoiso:
-        elec_method = 'elec_WZ_tight_noiso'
-        muon_method = 'muon_WZ_tight_noiso'
-        tau_method  = 'tau_id'
-    else:
-        elec_method = 'elec_id'
-        muon_method = 'muon_id'
-        tau_method  = 'tau_id'
-
-    for l in lep:
-        if l[0]=='e': method = elec_method
-        if l[0]=='m': method = muon_method
-        if l[0]=='t': method = tau_method
-        if not eval('%s(rtrow,l,period)'%method): return False
-
+            if l[0]=='e': lep_method = 'elec_id'
+            if l[0]=='m': lep_method = 'muon_id'
+            if l[0]=='t': lep_method = 'tau_id'
+            if not eval('%s(rtrow,l,period,idType)'%lep_method): return False
+        
     return True
 
-def elec_id_cbid_mva(rtrow,l,period,cbid,mva):
-    if mva=='NonTrig':
+def elec_id(rtrow, l, period, idType):
+    if idType=='NonTrig':
         if not _elec_mva_nontriggering(rtrow, l, period): return False
-    if mva=='Trig':
+    if idType=='Trig':
         if not _elec_mva_triggering(rtrow, l, period): return False
-    if cbid=='Veto':
+    if idType=='Veto':
         if not getattr(rtrow, '%sCBIDVeto' % l): return False
-    if cbid=='Loose':
+    if idType=='Loose':
         if not getattr(rtrow, '%sCBIDLoose' % l): return False
-    if cbid=='Medium':
+    if idType=='Medium':
         if not getattr(rtrow, '%sCBIDMedium' % l): return False
-    if cbid=='Tight':
+    if idType=='Tight':
         if not getattr(rtrow, '%sCBIDTight' % l): return False
     return True
 
-def tau_id(rtrow, l, period):
+def muon_id(rtrow, l, period, idType):
+    if idType=='Tight':
+        if not getattr(rtrow,'%sPFIDTight'%l): return False
+    if idType=='Loose':
+        if not getattr(rtrow,'%sPFIDLoose'%l): return False
+    return True
+
+# TODO, define Tight and Loose IDs
+def tau_id(rtrow, l, period, idType):
     antiElec = getattr(rtrow, "%sAntiElectronTight" % l)
     antiMuon = getattr(rtrow, "%sAntiMuon3Tight" % l)
     id3Hits  = getattr(rtrow, "%sVTightIsoMVA3NewDMLT" %l)
     decayFind = getattr(rtrow, "%sDecayFinding" %l)
     return all([antiElec, antiMuon, id3Hits, decayFind])
 
-def muon_id(rtrow, l, period):
-    dz = abs(getattr(rtrow, "%sPVDZ" % l)) < 1.0
-    dxy = abs(getattr(rtrow, "%sPVDXY" % l)) < 0.5
-
-    ip3d = "%sIP3DSig" %l if period == "13" else "%sIP3DS" %l
-
-    sip = getattr(rtrow, ip3d) < 4.0
-
-    mu_type = getattr(rtrow, "%sIsTracker" % l) or getattr(rtrow, "%sIsGlobal" % l)
-
-    return all([dz, dxy, sip, mu_type])
-
-def muon_id_tight(rtrow, l, period):
-    return getattr(rtrow, '%sPFIDTight' %l)
-
-def elec_id(rtrow, l, period):
-    dz = abs(getattr(rtrow, "%sPVDZ" % l)) < 1.0
-    dxy = abs(getattr(rtrow, "%sPVDXY" % l)) < 0.5
-
-    ip3d = "%sIP3DSig" %l if period == "13" else "%sIP3DS" %l
-
-    sip = getattr(rtrow, ip3d) < 4.0
-
-    nhit = getattr(rtrow, "%sMissingHits" % l) <= 1
-
-    mva = _elec_mva_nontriggering(rtrow, l, period)
-    #cbid = getattr(rtrow, "%sCBIDLoose_25ns" %l) > 0.5
-
-    return all([dz, dxy, sip, nhit, mva])
-
-def elec_id_tight(rtrow, l, period):
-    dz = abs(getattr(rtrow, "%sPVDZ" % l)) < 0.1
-    dxy = abs(getattr(rtrow, "%sPVDXY" % l)) < 0.02
-
-    mva = _elec_mva_triggering(rtrow, l, period)
-
-    nhit = getattr(rtrow, "%sMissingHits" % l) == 0
-
-    convVeto = not getattr(rtrow, "%sHasConversion" % l)
-
-    return all([dz, dxy, nhit, convVeto, mva])
 
 def _elec_mva_nontriggering(rtrow, l, period):
     pt = getattr(rtrow, "%sPt" % l)
@@ -158,106 +83,3 @@ def _elec_mva_triggering(rtrow, l, period):
 
     else:
         return False
-
-def elec_WZ_loose(rtrow, l, period):
-    pt = getattr(rtrow, "%sPt" % l)
-    eta = abs(getattr(rtrow, "%sEta" % l))
-    sceta = abs(getattr(rtrow, "%sSCEta" % l))
-    sieie = getattr(rtrow, "%sSigmaIEtaIEta" % l)
-    dphi = getattr(rtrow, "%sdeltaPhiSuperClusterTrackAtVtx" %l)
-    deta = getattr(rtrow, "%sdeltaEtaSuperClusterTrackAtVtx" %l)
-    hoe = getattr(rtrow, "%sHadronicOverEM" %l)
-    eiso = getattr(rtrow, "%sEcalIsoDR03" %l)
-    hiso = getattr(rtrow, "%sHcalIsoDR03" %l)
-    tiso = getattr(rtrow, "%sTrkIsoDR03" %l)
-    conv = getattr(rtrow, "%sHasConversion" %l)
-    misshits = getattr(rtrow, "%sMissingHits" %l)
-
-    passid = True
-    if pt < 10: passid = False
-    if eta > 2.5: passid = False
-    if sceta < 1.479:
-        if sieie > 0.01: passid = False # 0.01 for WZ
-        if dphi > 0.15: passid = False
-        if deta > 0.007: passid = False
-        if hoe > 0.12: passid = False # 0.12 for WZ
-        if max(eiso-1,0)/pt > 0.2: passid = False
-    if sceta >= 1.479:
-        if sieie > 0.03: passid = False # 0.03 for WZ
-        if dphi > 0.1: passid = False
-        if deta > 0.009: passid = False
-        if hoe > 0.1: passid = False
-        if eiso/pt > 0.2: passid = False
-    if tiso/pt > 0.2: passid = False
-    if hiso/pt > 0.2: passid = False
-    #if eiso/pt > 0.2: passid = False # differnt for WZ
-    if conv: passid = False
-    if misshits: passid = False
-
-    return passid
-
-def elec_WZ_tight_noiso(rtrow, l, period):
-    d0 = getattr(rtrow, "%sPVDXY" %l)
-    dz = getattr(rtrow, "%sPVDZ" %l)
-    mva = _elec_mva_triggering(rtrow, l, period)
-
-    if period=='13':
-        cbid = getattr(rtrow, '%sCBIDTight' % l)
-        return cbid and d0<0.02 and dz<0.1 and mva
-
-    wzloose = elec_WZ_loose(rtrow, l, period)
-
-    return d0 < 0.02 and dz < 0.1 and wzloose and mva
-
-def elec_WZ_tight(rtrow, l, period):
-    wztightNoIso = elec_WZ_tight_noiso(rtrow, l, period)
-    reliso = getattr(rtrow, "%sRelPFIsoRho" %l)
-
-    return reliso < 0.15 and wztightNoIso 
-
-def muon_WZ_loose_noiso(rtrow, l, period):
-    pt = getattr(rtrow, "%sPt" % l)
-    eta = abs(getattr(rtrow, "%sEta" % l))
-    d0 = getattr(rtrow, "%sPVDXY" %l)
-    dz = getattr(rtrow, "%sPVDZ" %l)
-    tightid = getattr(rtrow, '%sPFIDTight' %l)
-
-    passid = True
-    if pt < 10: passid = False
-    if eta > 2.4: passid = False
-    #if d0 > 0.2: passid = False
-    #if dz > 0.1: passid = False
-    if not tightid: passid = False
-
-    return passid
-
-
-def muon_WZ_loose(rtrow, l, period):
-    looseNoIso = muon_WZ_loose_noiso(rtrow,l,period)
-    reliso = getattr(rtrow, "%sRelPFIsoDBDefault" %l)
-
-    passid = looseNoIso
-    if reliso > 0.2: passid = False
-    
-    return passid
-
-def muon_WZ_tight_noiso(rtrow, l, period):
-    looseid = muon_WZ_loose_noiso(rtrow, l, period)
-    d0 = getattr(rtrow, "%sPVDXY" %l)
-    pt = getattr(rtrow, "%sPt" % l)
-    eta = abs(getattr(rtrow, "%sEta" % l))
-
-    passid = looseid
-    #if pt<20 and d0>0.01: passid = False
-    #if pt>=20 and d0>0.02: passid = False
-
-    return passid
-
-def muon_WZ_tight(rtrow, l, period):
-    tightNoIso = muon_WZ_tight_noiso(rtrow, l, period)
-    reliso = getattr(rtrow, "%sRelPFIsoDBDefault" %l)
-
-    passid = tightNoIso
-    if reliso > 0.12: passid = False
-
-    return passid

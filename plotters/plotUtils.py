@@ -37,7 +37,7 @@ def defineCutFlowMap(region,channels,mass):
     }
     regionMap['Hpp3l'][2] = {
         'st' : '(finalstate.sT>%f-10||finalstate.sT>200.)' %mass,
-        'zveto' : 'fabs(z1.mass-%f)>50.' %ZMASS,
+        'zveto' : 'fabs(z.mass-%f)>50.' %ZMASS,
         'met' : 'finalstate.met>20.',
         'dphi' : 'hN.dPhi<2.1',
         'mass' : 'hN.mass>0.5*%f-20.&&hN.mass<1.1*%f' %(mass,mass)
@@ -49,14 +49,14 @@ def defineCutFlowMap(region,channels,mass):
         'mass' : 'hN.mass>0.9*%f&&hN.mass<1.1*%f' %(mass,mass)
     }
     regionMap['Hpp4l'][1] = {
-        'st' : '(finalstate.sT>%f+100.||4l.sT>400.)' %mass,
-        'zveto' : 'fabs(z1.mass-%f)>10.' %ZMASS,
+        'st' : '(finalstate.sT>%f+100.||finalstate.sT>400.)' %mass,
+        'zveto' : 'fabs(z1.mass-%f)>10.&&fabs(z2.mass-%f)>10.' %(ZMASS,ZMASS),
         'dphi' : None,
         'mass' : 'hN.mass>0.5*%f&&hN.mass<1.1*%f' %(mass,mass)
     }
     regionMap['Hpp4l'][2] = {
         'st' : 'finalstate.sT>120.',
-        'zveto' : 'fabs(z1.mass-%f)>50.' %ZMASS,
+        'zveto' : 'fabs(z1.mass-%f)>50.&&fabs(z2.mass-%f)>50.' %(ZMASS,ZMASS),
         'dphi' : 'hN.dPhi<2.5',
         'mass' : None
     }
@@ -93,7 +93,7 @@ def defineCutFlowMap(region,channels,mass):
     usedLepPairs = []
     for channel in channels:
         lepPairs = [channel[:2]]
-        if region=='4l': lepPairs += [channel[2:]]
+        if region=='Hpp4l': lepPairs += [channel[2:]]
         if lepPairs in usedLepPairs: continue
         for cut in cuts:
             if cuts[cut] and cuts[cut][-2:]!='||': cuts[cut] += '||'
@@ -194,10 +194,10 @@ def getChannelStringsCuts(region,channels):
     channelCuts = ['channel=="%s"' % x for x in channels]
     channelsWZ = [['ee','e'],['ee','m'],['mm','e'],['mm','m']]
     channelStringsWZ = ['(ee)e','(ee)#mu','(#mu#mu)e','(#mu#mu)#mu']
-    channelCutsWZ = ['z1Flv=="%s"&&w1Flv=="%s"' %(x[0],x[1]) for x in channelsWZ]
+    channelCutsWZ = ['zFlv=="%s"&&wFlv=="%s"' %(x[0],x[1]) for x in channelsWZ]
     channelsZ = ['ee','mm']
     channelStringsZ = ['ee','#mu#mu']
-    channelCutsZ = ['z1Flv=="%s"' %x for x in channelsZ]
+    channelCutsZ = ['zFlv=="%s"' %x for x in channelsZ]
     channelsTTW = [['eee','eem'],['eme','emm'],['mme','mmm']]
     channelStringsTTW = ['ee','e#mu','#mu#mu']
     channelCutsTTW = ['(channel=="%s"||channel=="%s")' %(x[0],x[1]) for x in channelsTTW]

@@ -31,6 +31,8 @@ From here, you must add the following necessary objects and functions:
 * `choose_objects(self,rtrow)`
 * `choose_alternative_objects(self,rtrow,state)` (optional)
 * `preselection(self,rtrow)`
+* `selection(self,rtrow)`
+*  getIdArgs(self,type)
 
 Look at [AnalyzerWZ.py](AnalyzerWZ.py) for an example.
 
@@ -45,6 +47,7 @@ variable). The common ntuple elements are:
 `ntuple.root`
 * `cutflow` (`TH1`)
 * Analysis label (`TTree`, e.g. `WZ`)
+  * `select` (`TBranch`)
   * `event` (`TBranch`)
   * `channel` (`Char_t[8]`)
   * `finalstate` (`TBranch`)
@@ -56,6 +59,11 @@ variable). The common ntuple elements are:
   * ...
 
 Each of these branches are defined below:
+
+`select`
+* `passTight`
+* `passLoose`
+* `passNM` (NM = numbers 0 to number of objects in final state 1 for each object type)
 
 `event`
 * `evt`
