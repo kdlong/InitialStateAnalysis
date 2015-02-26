@@ -47,10 +47,15 @@ def muon_id(rtrow, l, period, idType):
 
 # TODO, define Tight and Loose IDs
 def tau_id(rtrow, l, period, idType):
-    antiElec = getattr(rtrow, "%sAntiElectronTight" % l)
-    antiMuon = getattr(rtrow, "%sAntiMuon3Tight" % l)
-    id3Hits  = getattr(rtrow, "%sVTightIsoMVA3NewDMLT" %l)
-    decayFind = getattr(rtrow, "%sDecayFinding" %l)
+    antiElec = getattr(rtrow, "%sAgainstElectronMediumMVA5" % l)
+    antiMuon = getattr(rtrow, "%sAgainstMuonTight3" % l)
+    decayFind = getattr(rtrow, "%sDecayModeFinding" %l) # really should be old DM, but not available in PHYS14 right now
+    if idType=='Loose':
+        id3Hits  = getattr(rtrow, "%sByLooseCombinedIsolationDeltaBetaCorr3Hits" %l)
+    if idType=='Medium':
+        id3Hits  = getattr(rtrow, "%sByMediumCombinedIsolationDeltaBetaCorr3Hits" %l)
+    if idType=='Tight':
+        id3Hits  = getattr(rtrow, "%sByTightCombinedIsolationDeltaBetaCorr3Hits" %l)
     return all([antiElec, antiMuon, id3Hits, decayFind])
 
 

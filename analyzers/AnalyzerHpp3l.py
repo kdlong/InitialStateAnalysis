@@ -128,7 +128,7 @@ class AnalyzerHpp3l(AnalyzerBase):
             kwargs['idDef'] = {
                 'e':'Medium',
                 'm':'Tight',
-                't':'Tight'
+                't':'Medium'
             }
             kwargs['isoCut'] = {
                 'e':0.15,
