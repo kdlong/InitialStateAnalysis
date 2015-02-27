@@ -162,7 +162,7 @@ class AnalyzerHpp4l(AnalyzerBase):
                     "doubleMuPass", "doubleMuTrkPass"]
 
         if self.period == '13':
-            triggers = ['muEPass', 'doubleMuPass',
+            triggers = ['muEPass', 'eMuPass', 'doubleMuPass',
                         'doubleEPass', 'tripleEPass']
 
         for t in triggers:
