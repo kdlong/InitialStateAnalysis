@@ -47,7 +47,7 @@ def muon_id(rtrow, l, period, idType):
 
 def tau_id(rtrow, l, period, idType):
     if not getattr(rtrow, "%sDecayModeFinding" %l): return False  # really should be old DM, but not available in PHYS14 right now, all miniAOD pass
-    if not getattr(rtrow, "%sAgainstElectronMediumMVA6" % l): return False
+    if not getattr(rtrow, "%sAgainstElectronMediumMVA5" % l): return False
     if not getattr(rtrow, "%sAgainstMuonTight3" % l): return False
     if idType=='Loose':
         if not getattr(rtrow, "%sByLooseCombinedIsolationDeltaBetaCorr3Hits" %l): return False
@@ -55,7 +55,7 @@ def tau_id(rtrow, l, period, idType):
         if not getattr(rtrow, "%sByMediumCombinedIsolationDeltaBetaCorr3Hits" %l): return False
     if idType=='Tight':
         if not getattr(rtrow, "%sByTightCombinedIsolationDeltaBetaCorr3Hits" %l):return False
-    return return True
+    return True
 
 
 def _elec_mva_nontriggering(rtrow, l, period):
