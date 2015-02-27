@@ -163,13 +163,13 @@ class AnalyzerHpp3l(AnalyzerBase):
     def fiducial(self, rtrow):
         for l in self.objects:
             if l[0]=='e':
-                ptcut = 10.0
+                ptcut = 20.0 # CBID: 20, MVA trig: 10, MVA nontrig: 5
                 etacut = 2.5
             if l[0]=='m':
-                ptcut = 10.0
+                ptcut = 20.0 # ???
                 etacut = 2.4
             if l[0]=='t':
-                ptcut = 20.0
+                ptcut = 20.0 # 20
                 etacut = 2.3
             if getattr(rtrow, '%sPt' % l) < ptcut:
                 return False
@@ -186,7 +186,7 @@ class AnalyzerHpp3l(AnalyzerBase):
     def trigger_threshold(self, rtrow):
         pts = [getattr(rtrow, "%sPt" % l) for l in self.objects]
         pts.sort(reverse=True)
-        return pts[0] > 20.0 and pts[1] > 10.0
+        return pts[0] > 25.0 and pts[1] > 15.0
 
     def qcd_rejection(self, rtrow):
         qcd_pass = [getattr(rtrow, "%s_%s_Mass" % (l[0], l[1])) > 12.0
