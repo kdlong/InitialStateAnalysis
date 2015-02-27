@@ -45,18 +45,17 @@ def muon_id(rtrow, l, period, idType):
         if not getattr(rtrow,'%sPFIDLoose'%l): return False
     return True
 
-# TODO, define Tight and Loose IDs
 def tau_id(rtrow, l, period, idType):
-    antiElec = getattr(rtrow, "%sAgainstElectronMediumMVA5" % l)
-    antiMuon = getattr(rtrow, "%sAgainstMuonTight3" % l)
-    decayFind = getattr(rtrow, "%sDecayModeFinding" %l) # really should be old DM, but not available in PHYS14 right now
+    if not getattr(rtrow, "%sDecayModeFinding" %l): return False  # really should be old DM, but not available in PHYS14 right now, all miniAOD pass
+    if not getattr(rtrow, "%sAgainstElectronMediumMVA6" % l): return False
+    if not getattr(rtrow, "%sAgainstMuonTight3" % l): return False
     if idType=='Loose':
-        id3Hits  = getattr(rtrow, "%sByLooseCombinedIsolationDeltaBetaCorr3Hits" %l)
+        if not getattr(rtrow, "%sByLooseCombinedIsolationDeltaBetaCorr3Hits" %l): return False
     if idType=='Medium':
-        id3Hits  = getattr(rtrow, "%sByMediumCombinedIsolationDeltaBetaCorr3Hits" %l)
+        if not getattr(rtrow, "%sByMediumCombinedIsolationDeltaBetaCorr3Hits" %l): return False
     if idType=='Tight':
-        id3Hits  = getattr(rtrow, "%sByTightCombinedIsolationDeltaBetaCorr3Hits" %l)
-    return all([antiElec, antiMuon, id3Hits, decayFind])
+        if not getattr(rtrow, "%sByTightCombinedIsolationDeltaBetaCorr3Hits" %l):return False
+    return return True
 
 
 def _elec_mva_nontriggering(rtrow, l, period):
