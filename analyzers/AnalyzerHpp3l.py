@@ -33,18 +33,18 @@ class AnalyzerHpp3l(AnalyzerBase):
         self.final_states = ['eee','eem','emm','mmm'] # no tau
         if runTau: self.final_states = ['eee','eem','eet','emm','emt','ett','mmm','mmt','mtt','ttt']
         self.initial_states = ['h1','h2']
-        self.other_states = [['z', 'w']]
+        self.other_states = [['z1', 'w1']]
         self.object_definitions = {
             'h1': ['em','em'],
             'h2': ['em','n'],
-            'z': ['em','em'],
-            'w': ['em','n'],
+            'z1': ['em','em'],
+            'w1': ['em','n'],
         }
         if runTau:
             self.object_definitions['h1'] = ['emt', 'emt']
             self.object_definitions['h2'] = ['emt', 'n']
-            self.object_definitions['z'] = ['emt', 'emt']
-            self.object_definitions['w'] = ['emt', 'n']
+            self.object_definitions['z1'] = ['emt', 'emt']
+            self.object_definitions['w1'] = ['emt', 'n']
         self.cutflow_labels = ['Trigger','Fiducial','Trigger Threshold','ID','QCD Suppression']
         super(AnalyzerHpp3l, self).__init__(sample_location, out_file, period)
 
