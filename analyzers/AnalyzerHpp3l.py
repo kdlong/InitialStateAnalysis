@@ -76,7 +76,7 @@ class AnalyzerHpp3l(AnalyzerBase):
         Select alternative candidate.
         '''
         # WZ
-        if state == ['z', 'w']:
+        if state == ['z1', 'w1']:
             bestZDiff = float('inf')
             bestLeptons = []
 
