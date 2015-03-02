@@ -23,21 +23,21 @@ def defineCutFlowMap(region,channels,mass):
     regionMap = { 'Hpp3l' : {}, 'Hpp4l' : {} }
     regionMap['Hpp3l'][0] = {
         'st' : 'finalstate.sT>1.1*%f+60.' %mass,
-        'zveto' : 'fabs(z.mass-%f)>80.' %ZMASS,
+        'zveto' : 'fabs(z1.mass-%f)>80.' %ZMASS,
         'met' : None,
         'dphi' : 'hN.dPhi<%f/600.+1.95' %mass,
         'mass' : 'hN.mass>0.9*%f&&hN.mass<1.1*%f' %(mass,mass)
     }
     regionMap['Hpp3l'][1] = {
         'st' : 'finalstate.sT>0.85*%f+125.' %mass,
-        'zveto' : 'fabs(z.mass-%f)>80.' %ZMASS,
+        'zveto' : 'fabs(z1.mass-%f)>80.' %ZMASS,
         'met' : 'finalstate.met>20.',
         'dphi' : 'hN.dPhi<%f/200.+1.15' %mass,
         'mass' : 'hN.mass>0.5*%f&&hN.mass<1.1*%f' %(mass,mass)
     }
     regionMap['Hpp3l'][2] = {
         'st' : '(finalstate.sT>%f-10||finalstate.sT>200.)' %mass,
-        'zveto' : 'fabs(z.mass-%f)>50.' %ZMASS,
+        'zveto' : 'fabs(z1.mass-%f)>50.' %ZMASS,
         'met' : 'finalstate.met>20.',
         'dphi' : 'hN.dPhi<2.1',
         'mass' : 'hN.mass>0.5*%f-20.&&hN.mass<1.1*%f' %(mass,mass)
