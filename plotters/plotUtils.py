@@ -93,7 +93,7 @@ def defineCutFlowMap(region,channels,mass):
     usedLepPairs = []
     for channel in channels:
         lepPairs = [channel[:2]]
-        if region=='Hpp4l': lepPairs += [channel[2:]]
+        #if region=='Hpp4l': lepPairs += [channel[2:]]
         if lepPairs in usedLepPairs: continue
         for cut in cuts:
             if cuts[cut] and cuts[cut][-2:]!='||': cuts[cut] += '||'
@@ -110,14 +110,21 @@ def defineCutFlowMap(region,channels,mass):
                     else:
                         tempCut[cut] = ''
                     tempCut[cut] += 'h%iFlv=="%s"&&%s' % (hNum, lepPair, thisCut.replace('N',str(hNum)))
+                else:
+                    if cut in tempCut:
+                        tempCut[cut] += '&&'
+                    else:
+                        tempCut[cut] = ''
+                    tempCut[cut] += 'h%iFlv=="%s"' % (hNum, lepPair)
         for cut in cuts:
             if cut in tempCut:
                 cuts[cut] += '(%s)' % tempCut[cut]
         usedLepPairs += [lepPairs]
     for cut in cuts:
         if not cuts[cut]:
-            cuts[cut] = '1'
+            cuts[cut] = '('+'||'.join(['h1Flv=="%s"' %x[0] for x in usedLepPairs])+')'
         else:
+            if cuts[cut][-2:]=='||': cuts[cut] = cuts[cut][:-2]
             cuts[cut] = '(%s)' % cuts[cut]
 
     if region == 'Hpp3l':

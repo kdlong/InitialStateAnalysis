@@ -27,6 +27,11 @@ class CutFlowPlotter(PlotterBase):
         if sample in self.sampleMergeDict:
             for s in self.sampleMergeDict[sample]:
                 tree = self.samples[s]['file'].Get(self.analysis)
+                #selTrees = [tree]
+                #self.savefile.cd()
+                #for sel in selections:
+                #    selTrees += [selTrees[-1].CopyTree(sel)]
+                #val = selTrees[-1].GetEntries('1')
                 val = tree.GetEntries(selection)
                 if 'data' not in s: 
                     lumi = self.samples[s]['lumi']
@@ -34,6 +39,11 @@ class CutFlowPlotter(PlotterBase):
                 totalVal += val
         else:
             tree = self.samples[sample]['file'].Get(self.analysis)
+            #selTrees = [tree]
+            #self.savefile.cd()
+            #for sel in selections:
+            #    selTrees += [selTrees[-1].CopyTree(sel)]
+            #val = selTrees[-1].GetEntries('1')
             val = tree.GetEntries(selection)
             if 'data' not in sample:
                 lumi = self.samples[sample]['lumi']
@@ -51,6 +61,7 @@ class CutFlowPlotter(PlotterBase):
             cutString = cut + '&' + selections[bin] if not sumEntries else\
                         cut + ' & ' + ' & '.join(selections[:bin+1])
             val = self.getNumEntries(cutString,sample)
+            #val = self.getNumEntries(selections[:bin+1],sample)
             valList += [val]
             hist.SetBinContent(bin+1,val)
         if printString: self.writeCutString(sample,valList)

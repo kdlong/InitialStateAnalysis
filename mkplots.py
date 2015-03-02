@@ -111,6 +111,7 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
     plotKinematicsMethod(plotMethod,leptons,'Lepton',[myCut]*nl,logy=0)
     plotKinematicsMethod(plotMethod,leptons,'Electron',['%sFlv=="e"&&%s' %(x,myCut) for x in leptons],logy=0)
     plotKinematicsMethod(plotMethod,leptons,'Muon',['%sFlv=="m"&&%s' %(x,myCut) for x in leptons],logy=0)
+    if runTau: plotKinematicsMethod(plotMethod,leptons,'Tau',['%sFlv=="t"&&%s' %(x,myCut) for x in leptons],logy=0)
     # each channel
     if plotFinalStates:
         print "MKPLOTS:%s:%s:%iTeV: Plotting individual finalStates" % (analysis, channel, runPeriod)
