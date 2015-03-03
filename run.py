@@ -16,16 +16,17 @@ from multiprocessing import Pool
 
 from utilities.utilities import *
 from analyzers.AnalyzerWZ import AnalyzerWZ
-from analyzers.AnalyzerHpp3l import AnalyzerHpp3l
+from analyzers.AnalyzerHpp3l import AnalyzerHpp3l, AnalyzerFakeRate
 from analyzers.AnalyzerHpp4l import AnalyzerHpp4l
 
 def run_analyzer(args):
     '''Run the analysis'''
     analysis, channel, location, outfile, period = args
     analyzerMap = {
-        'WZ'   : AnalyzerWZ,
-        'Hpp3l': AnalyzerHpp3l,
-        'Hpp4l': AnalyzerHpp4l,
+        'WZ'      : AnalyzerWZ,
+        'Hpp3l'   : AnalyzerHpp3l,
+        'Hpp4l'   : AnalyzerHpp4l,
+        'FakeRate': AnalyzerFakeRate,
     }
     theAnalyzer = analyzerMap[channel]
     with theAnalyzer(location,outfile,period) as analyzer:
@@ -129,7 +130,7 @@ def parse_command_line(argv):
                                                  "FSA n-tuples")
 
     parser.add_argument('analysis', type=str, choices=['WZ','Hpp3l','Hpp4l'], help='Analysis to run')
-    parser.add_argument('channel', type=str, choices=['WZ','Hpp3l','Hpp4l'], help='Channel to run for given analysis')
+    parser.add_argument('channel', type=str, choices=['WZ','Hpp3l','Hpp4l','FakeRate'], help='Channel to run for given analysis')
     parser.add_argument('period', type=str, choices=['7','8','13'], help='Energy (TeV)')
     parser.add_argument('sample_names', nargs='+',help='Sample names w/ UNIX wildcards')
     parser.add_argument('-s','--submit',action='store_true',help='Submit jobs to condor')

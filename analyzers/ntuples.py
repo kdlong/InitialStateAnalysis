@@ -93,6 +93,7 @@ def buildNtuple(object_definitions,states,channelName,final_states):
        Float_t Phi;\
        Float_t Iso;\
        Int_t   Chg;\
+       Int_t   PassTight;\
     };");
     rt.gROOT.ProcessLine(
     "struct structObjChar_t {\
@@ -120,7 +121,7 @@ def buildNtuple(object_definitions,states,channelName,final_states):
                     charName = 'g'
                     phoCount += 1
                     objCount = phoCount
-                structureDict['%s%i' % (charName, objCount)] = [objStruct, objStruct, 'Pt/F:Eta:Phi:Iso:Chg/I']
+                structureDict['%s%i' % (charName, objCount)] = [objStruct, objStruct, 'Pt/F:Eta:Phi:Iso:Chg/I:PassTight']
                 structureDict['%s%iFlv' % (charName, objCount)] = [flvStruct, rt.AddressOf(flvStruct,'Flv'),'Flv/C']
                 structOrder += ['%s%i' % (charName, objCount)]
                 structOrder += ['%s%iFlv' % (charName, objCount)]
@@ -155,9 +156,11 @@ def buildNtuple(object_definitions,states,channelName,final_states):
                 if obj == 'n': continue
                 else:
                     objCount += 1
-                    strForBranch += "Chg%i/I:" % objCount if objCount == 1 else "Chg%i:" % objCount
+                    strForBranch += "Chg%i/I:PassTight%i:" % (objCount, objCount) if objCount == 1 else\
+                                    "Chg%i:PassTight%i:" % (objCount, objCount)
                     strToProcess += "\
-                        Int_t   Chg%i;" % objCount
+                        Int_t   Chg%i;\
+                        Int_t   PassTight%i;" % (objCount, objCount)
             strForBranch = strForBranch[:-1] # remove trailing :
             strToProcess += "\
                 };"

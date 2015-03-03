@@ -193,11 +193,101 @@ class AnalyzerHpp3l(AnalyzerBase):
                     for l in combinations(self.objects, 2)]
         return all(qcd_pass)
 
+#######################
+###### Fake rate ######
+#######################
+class AnalyzerFakeRate(AnalyzerHpp3l):
+    '''
+    A class to produce ntuples to calculate the fakerate for the leptons.
+    '''
+    def __init__(self, sample_location, out_file, period, **kwargs):
+        super(AnalyzerFakeRate, self).__init__(sample_location, out_file, period, **kwargs)
+        self.channel = 'FakeRate'
+        self.final_states = ['emm','mmm','mmt'] 
+        self.initial_states = ['z1','f1']
+        self.other_states = []
+        self.object_definitions = {
+            'z1': ['m','m'],
+            'f1': ['emt'],
+        }
+        self.cutflow_labels = ['Trigger','Fiducial','Trigger Threshold','ID','QCD Suppression','Z Selection']
+
+    ###############################
+    ### Define Object selection ###
+    ###############################
+    def choose_objects(self, rtrow):
+        '''
+        Select candidate objects
+        '''
+        cands = []
+        bestZDiff = float('inf')
+        for l in permutations(self.objects):
+            if lep_order(l[0], l[1]):
+                continue
+
+            # first two must be the Z candidate
+            OS1 = getattr(rtrow, "%s_%s_SS" % (l[0], l[1])) < 0.5 # select opposite sign
+            SF1 = l[0][0]==l[1][0] # select same flavor
+            massdiff = abs(getattr(rtrow,'%s_%s_Mass' % (l[0], l[1]))-ZMASS)
+
+            if OS1 and SF1:
+                cands.append([massdiff,list(l)])
+
+        if not len(cands): return 0
+
+        cands.sort(key=lambda x: x[0])
+        massdiff, leps = cands[0]
+
+        return ([massdiff], leps)
+
+    # reoveride
+    def choose_alternative_objects(self, rtorw, state):
+        return []
+
+    @staticmethod
+    def good_to_store(rtrow, cand1, cand2):
+        '''
+        Iterate through minimizing variables.
+        '''
+        for min1, min2 in zip(cand1, cand2):
+            if min1 < min2: return True
+            if min1 > min2: return False
+        return False
+
+    def preselection(self,rtrow):
+        cuts = CutSequence()
+        cuts.add(self.trigger)
+        cuts.add(self.fiducial)
+        cuts.add(self.trigger_threshold)
+        cuts.add(self.ID_loose)
+        cuts.add(self.qcd_rejection)
+        cuts.add(self.z_selection)
+        return cuts
+
+    def selection(self,rtrow):
+        cuts = CutSequence()
+        cuts.add(self.trigger)
+        cuts.add(self.fiducial)
+        cuts.add(self.trigger_threshold)
+        cuts.add(self.ID_tight)
+        cuts.add(self.qcd_rejection)
+        cuts.add(self.z_selection)
+        return cuts
+
+    def z_selection(self,rtrow):
+        '''Select Z candidate'''
+        m1 = getattr(rtrow,'%s_%s_Mass' % (self.objects[0], self.objects[1]))
+        return abs(m1-ZMASS)<20.
+
+
+
+
 ##########################
 ###### Command line ######
 ##########################
 def parse_command_line(argv):
     parser = argparse.ArgumentParser()
+    parser.add_argument('analyzer', type=str)
     parser.add_argument('in_sample', type=str)
     parser.add_argument('out_file', type=str)
     parser.add_argument('period', type=str)
@@ -212,7 +302,8 @@ def main(argv=None):
 
     args = parse_command_line(argv)
 
-    analyzer = AnalyzerHpp3l(args.in_sample,args.out_file,args.period)
+    if args.analyzer=='Hpp3l': analyzer = AnalyzerHpp3l(args.in_sample,args.out_file,args.period)
+    if args.analyzer=='FakeRate': analyzer = AnalyzerFakeRate(args.in_sample,args.out_file,args.period)
     with analyzer as thisAnalyzer:
         thisAnalyzer.analyze()
 

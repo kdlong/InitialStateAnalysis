@@ -290,7 +290,12 @@ class AnalyzerBase(object):
                 numObjects = len([ x for x in self.object_definitions[i] if x != 'n']) if theObjects else 0
                 finalObjects = theObjects[objStart:objStart+numObjects]
                 orderedFinalObjects = sorted(finalObjects, key = lambda x: getattr(rtrow,"%sPt" % x))
-                if 'n' == self.object_definitions[i][1]:
+                if len(self.object_definitions[i]) == 1:
+                    ntupleRow["%s.mass" %i] = float(-9)
+                    ntupleRow["%s.sT" %i] = float(getattr(rtrow, "%sPt" % finalObjects[0])) if theObjects else float(-9)
+                    ntupleRow["%s.dPhi" %i] = float(-9)
+                    ntupleRow["%sFlv.Flv" %i] = finalObjects[0][0] if theObjects else 'a'
+                elif 'n' == self.object_definitions[i][1]:
                     ntupleRow["%s.mass" %i] = float(getattr(rtrow, "%sMtToPFMET" % finalObjects[0])) if theObjects else float(-9)
                     ntupleRow["%s.sT" %i] = float(getattr(rtrow, "%sPt" % finalObjects[0]) + rtrow.pfMetEt) if theObjects else float(-9)
                     ntupleRow["%s.dPhi" %i] = float(getattr(rtrow, "%sToMETDPhi" % finalObjects[0])) if theObjects else float(-9)
@@ -311,6 +316,7 @@ class AnalyzerBase(object):
                         ntupleRow["%s.Eta%i" % (i,objCount)] = float(getattr(rtrow, "%sEta" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
                         ntupleRow["%s.Phi%i" % (i,objCount)] = float(getattr(rtrow, "%sPhi" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
                         ntupleRow["%s.Chg%i" % (i,objCount)] = float(getattr(rtrow, "%sCharge" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
+                        ntupleRow["%s.PassTight%i" % (i,objCount)] = float(self.ID(rtrow,orderedFinalObjects[objCount-1],**self.getIdArgs('Tight'))) if theObjects else float(-9)
                 objStart += numObjects
 
 
@@ -348,6 +354,7 @@ class AnalyzerBase(object):
             if obj[0]=='m': isoVar = 'RelPFIsoDBDefault'
             ntupleRow["%s%i.Iso" % (charName,objCount)] = float(getattr(rtrow, "%s%s" % (obj, isoVar))) if obj[0] in 'em' else float(-1.)
             ntupleRow["%s%i.Chg" % (charName,objCount)] = float(getattr(rtrow, "%sCharge" % obj))
+            ntupleRow["%s%i.PassTight" % (charName,objCount)] = float(self.ID(rtrow,obj,**self.getIdArgs('Tight')))
             ntupleRow["%s%iFlv.Flv" % (charName,objCount)] = obj[0]
 
         return ntupleRow
