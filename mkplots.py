@@ -3,6 +3,7 @@
 from plotters.Plotter import Plotter
 from plotters.ShapePlotter import ShapePlotter
 from plotters.CutFlowPlotter import CutFlowPlotter
+from plotters.FakeRatePlotter import FakeRatePlotter
 from plotters.plotUtils import *
 import argparse
 import itertools
@@ -202,55 +203,52 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
             thisCut = '&&'.join(cutFlowMap[channel]['cuts'][:i+1])
             plotMethod(['%s&&%s'%(myCut,thisCut)]+['%s&&%s&&%s' %(x,myCut,thisCut) for x in plotChannelCuts],'cutflow/%s/individualChannels'%cutFlowMap[channel]['labels_simple'][i],labels=['Total']+plotChannelStrings,nosum=True,lumitext=33,logy=0)
 
-def plotTest():
-    print 'Running test plot'
-    myCut = 'select.passWZ'
+def plotFakeRate(analysis,channel,runPeriod,**kwargs):
+    '''Plot fake rate for an analysis.'''
+    ntuples = 'ntuples%s_%stev_%s' % (analysis,runPeriod,channel)
+    saves = '%s_%s_%sTeV' % (analysis,channel,runPeriod)
     sigMap = getSigMap(3,500)
-    plotter = Plotter('3l',ntupleDir='ntuples3l_8tev',saveDir='test',period=8)
-    plotter.initializeBackgroundSamples([sigMap[8][x] for x in ['T','TT','Z','WW','ZZ','WZ','Sig']])
-    plotter.initializeDataSamples([sigMap[8]['data']])
-    plotter.setIntLumi(19700)
-    plotter.plotMCData('h1.mass',[20,0,500],'hppMass',yaxis='Events/25.0 GeV/c^{2}',xaxis='M(l^{+}l^{+}) (GeV/c^{2})',lumitext=33,logy=0,cut=myCut)
-    plotter.plotMCDataRatio('h1.mass',[20,0,500],'hppMass_ratio',yaxis='Events/25.0 GeV/c^{2}',xaxis='M(l^{+}l^{+}) (GeV/c^{2})',lumitext=33,logy=0,cut=myCut)
-
-    plotter = Plotter('3l',ntupleDir='ntuples3l_8tev',saveDir='test',period=8,rootName='plots_overlay')
-    plotter.initializeBackgroundSamples([sigMap[8][x] for x in ['T','TT','Z','WW','ZZ','WZ']])
-    plotter.initializeSignalSamples([sigMap[8]['Sig']])
-    plotter.initializeDataSamples([sigMap[8]['data']])
-    plotter.setIntLumi(19700)
-    plotter.plotMCDataSignal('h1.mass',[20,0,500],'hppMass_overlay',yaxis='Events/25.0 GeV/c^{2}',xaxis='M(l^{+}l^{+}) (GeV/c^{2})',lumitext=33,logy=1,cut=myCut,signalscale=100)
-    plotter.plotMCDataSignalRatio('h1.mass',[20,0,500],'hppMass_overlay_ratio',yaxis='Events/25.0 GeV/c^{2}',xaxis='M(l^{+}l^{+}) (GeV/c^{2})',lumitext=33,logy=1,cut=myCut,signalscale=100)
-
-    plotter = ShapePlotter('3l',ntupleDir='ntuples3l_8tev',saveDir='test',period=8,rootName='plots_shapes')
-    plotter.initializeBackgroundSamples([sigMap[8][x] for x in ['T','TT','Z','WW','ZZ','WZ']])
-    plotter.initializeSignalSamples([sigMap[8]['Sig']])
-    plotter.initializeDataSamples([sigMap[8]['data']])
-    plotter.setIntLumi(19700)
-    plotter.plotMC('z1.mass',['channel=="mmm"','channel=="emm"','channel=="eme"','channel=="eee"'],[42,70,112],'zMass_mc',yaxis='Normalized',xaxis='M(l^{+}l^{-}) (GeV)',logy=0,cut=myCut,cutNames=['mmm','emm','eme','eee'])
-
-    mass = 500
-    cutFlowMap = {
-        '3l' : {
-             'cuts' : ['1',\
-                       '3l.sT>1.1*%f+60.' %mass,\
-                       'fabs(z1.mass-%f)>80.' %ZMASS,\
-                       'h1.dPhi<%f/600.+1.95' %mass,\
-                       'h1.mass>0.9*%f & h1.mass<1.1*%f' %(mass,mass)],
-             'labels' : ['Preselection','s_{T}','Z Veto','#Delta#phi','Mass window']
-        },
+    intLumiMap = getIntLumiMap()
+    channelBackground = {
+        'WZ' : ['T','TT', 'TTV', 'Z', 'VVV', 'ZZ','WZ'],
+        'Hpp3l' : ['T','TT', 'TTV','Z','VVV','DB'],
+        'Hpp4l' : ['TT','Z','DB'],
+        'FakeRate' : ['T','TT', 'TTV','Z','VVV','DB'],
     }
-    plotter = CutFlowPlotter('3l',ntupleDir='ntuples3l_8tev',saveDir='test',period=8,rootName='plots_cutflow')
-    plotter.initializeBackgroundSamples([sigMap[8][x] for x in ['T','TT','Z','DB']])
-    plotter.initializeSignalSamples([sigMap[8]['Sig']])
-    plotter.initializeDataSamples([sigMap[8]['data']])
-    plotter.setIntLumi(19700)
-    plotter.plotCutFlowMCSignal([x+'&&'+myCut for x in cutFlowMap['3l']['cuts']],'cutFlow',labels=cutFlowMap['3l']['labels'],lumitext=33)
+    if runPeriod==13:
+        channelBackground = {
+            'WZ' : ['T','TT', 'TTV', 'Z', 'ZZ','WZ'],
+            'Hpp3l' : ['T', 'TT', 'TTV','Z','DB'],
+            'Hpp4l' : ['T', 'TT', 'Z', 'TTV','DB'],
+            'FakeRate' : ['T', 'TT', 'TTV','Z','DB'],
+        }
+
+    finalStates = ['mme','mmm','mmt']
+    
+    plotter = FakeRatePlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod)
+    plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]])
+    plotter.setIntLumi(intLumiMap[runPeriod])
+
+    # now plot the fake rates
+    denomSelection = 'z1.PassTight1==1 && z1.PassTight2==1'
+    eDenom = denomSelection+' && f1Flv=="e"'
+    mDenom = denomSelection+' && f1Flv=="m"'
+    tDenom = denomSelection+' && f1Flv=="t"'
+    ePtBins = [20,25,30,35,40,45,50,60]
+    mPtBins = [20,25,30,35,40,45,50,60]
+    tPtBins = [20,25,30,35,40,45,50,60]
+    eEtaBins = [0,1,1.479,2,2.5]
+    mEtaBins = [0,1,1.5,2,2.4]
+    tEtaBins = [0,1,1.479,2,2.3]
+    plotter.plotFakeRate('f1.PassTight1==0 && '+eDenom, eDenom, 'fakeRate_elec', ptBins=ePtBins, etaBins=eEtaBins)
+    plotter.plotFakeRate('f1.PassTight1==0 && '+mDenom, mDenom, 'fakeRate_muon', ptBins=mPtBins, etaBins=mEtaBins)
+    plotter.plotFakeRate('f1.PassTight1==0 && '+tDenom, tDenom, 'fakeRate_tau', ptBins=tPtBins, etaBins=tEtaBins)
 
 def parse_command_line(argv):
     parser = argparse.ArgumentParser(description="Plot a given channel and period")
 
     parser.add_argument('analysis', type=str, choices=['WZ','Hpp3l','Hpp4l'], help='Analysis to plot')
-    parser.add_argument('channel', type=str, choices=['WZ','Hpp3l','Hpp4l'], help='Channel in analysis')
+    parser.add_argument('channel', type=str, choices=['WZ','Hpp3l','Hpp4l','FakeRate'], help='Channel in analysis')
     parser.add_argument('period', type=int, choices=[7,8,13], help='Energy (TeV)')
     parser.add_argument('-pf','--plotFinalStates',action='store_true',help='Plot individual final states')
     parser.add_argument('-pj','--plotJetBins',action='store_true',help='Plot jet bins')
@@ -262,6 +260,7 @@ def parse_command_line(argv):
     parser.add_argument('-m','--mass',nargs='?',type=int,const=500,default=500)
     parser.add_argument('-am','--allMasses',action='store_true',help='Run over all masses')
     parser.add_argument('-ac','--allControls',action='store_true',help='Run over all controls for a given analysis (3l, 4l)')
+    parser.add_argument('-fr','--doFakeRate',action='store_true',help='Make fake rate plots and output fake rate histograms')
     args = parser.parse_args(argv)
 
     return args
@@ -295,6 +294,8 @@ def main(argv=None):
 
     if args.period == 7:
         print "7 TeV not implemented"
+    elif args.doFakeRate:
+        plotFakeRate(args.analysis,args.channel,args.period)
     elif args.allMasses:
         for m in massLists[args.period][args.channel]:
             plotRegion(args.analysis,args.channel,args.period,plotFinalStates=args.plotFinalStates,runTau=args.runTau,blind=args.unblind,mass=m,plotJetBins=args.plotJetBins,plotOveraly=args.plotOverlay,plotShapes=args.plotShapes,plotCutFlow=args.plotCutFlow)

@@ -9,6 +9,8 @@ from array import array
 import ROOT
 import math
 
+ROOT.gStyle.SetPalette(1)
+
 class FakeRatePlotter(PlotterBase):
     def __init__(self,analysis,**kwargs):
         PlotterBase.__init__(self,analysis,**kwargs)
@@ -48,12 +50,17 @@ class FakeRatePlotter(PlotterBase):
         fakeHist = ROOT.TH2F(savename,'',len(ptBins)-1,array('d',ptBins),len(etaBins)-1,array('d',etaBins))
         for p in range(len(ptBins)-1):
             for e in range(len(etaBins)-1):
-                kinCut = '%s>%f & %s<%f & abs(%s)>%f & abs(%s)<%f' %\
+                kinCut = '%s>%f && %s<%f && abs(%s)>%f && abs(%s)<%f' %\
                          (ptVar, ptBins[p], ptVar, ptBins[p+1], etaVar, etaBins[e], etaVar, etaBins[e+1])
-                numCut = '%s & %s' % (kinCut, passSelection)
-                denomCut = '%s & %s' % (kinCut, failSelection)
-                num = self.getNumEntries(numCut,*self.data)
-                denom = self.getNumEntries(denomCut,*self.data)
+                numCut = '%s && %s' % (kinCut, passSelection)
+                denomCut = '%s && %s' % (kinCut, failSelection)
+                #num = self.getNumEntries(numCut,*self.data)
+                #denom = self.getNumEntries(denomCut,*self.data)
+                num = 0
+                denom = 0
+                for sample in self.backgrounds:
+                    num += self.getNumEntries(numCut, sample)
+                    denom += self.getNumEntries(denomCut, sample)
                 fakerate = float(num)/denom
                 fakeHist.Fill(ptBins[p],etaBins[e],fakerate)
         return fakeHist
@@ -77,8 +84,8 @@ class FakeRatePlotter(PlotterBase):
         isprelim = kwargs.pop('isprelim', 1)
         ptBins = kwargs.pop('ptBins', [10,15,20,25,30,35,40,50])
         etaBins = kwargs.pop('etaBins', [0,1,1.479,2,2.5])
-        ptVar = kwargs.pop('ptVar','w1.Pt1')
-        etaVar = kwargs.pop('etaVar','w1.Eta1')
+        ptVar = kwargs.pop('ptVar','f1.Pt1')
+        etaVar = kwargs.pop('etaVar','f1.Eta1')
         xaxis = kwargs.pop('xaxis','p_{T} (GeV)')
         yaxis = kwargs.pop('yaxis','#eta')
         for key, value in kwargs.iteritems():
@@ -86,13 +93,15 @@ class FakeRatePlotter(PlotterBase):
 
         self.canvas.SetLogy(logy)
         self.canvas.SetLogx(logx)
+        self.canvas.SetRightMargin(0.14)
 
         # calculate fake rate
         fakeRateHist = self.getFakeRate(passSelection,failSelection,ptBins,etaBins,ptVar,etaVar,savename)
         fakeRateHist.GetXaxis().SetTitle(xaxis)
         fakeRateHist.GetYaxis().SetTitle(yaxis)
+        fakeRateHist.GetYaxis().SetTitleOffset(1.)
         fakeRateHist.SetTitle('')
-        #fakeRateHist.GetZaxis().SetRangeUser(0,0.35)
+        fakeRateHist.GetZaxis().SetRangeUser(0,1)
         self.savefile.WriteTObject(fakeRateHist)
 
         # plot fakerate
