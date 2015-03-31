@@ -53,7 +53,8 @@ class CutSequence(object):
 
     def evaluate(self, rtrow):
         for i,cut in enumerate(self.cut_sequence):
-            if not cut(rtrow): return False, i
+            if not cut(rtrow): 
+                return False, i
         return True, i+1
 
 def lep_order(a, b):
@@ -181,22 +182,26 @@ class AnalyzerBase(object):
 
         # now we store the total processed events
         print "%s %s: Processed %i events" % (self.channel, self.sample_name, numEvts)
-
-        # and the cutflow
+        
         cutflowVals = []
+        # and the cutflow
         for val in self.cutflowMap.itervalues():
             for i in range(val+1):
                 if len(cutflowVals)<i+1: cutflowVals.append(1)
                 else: cutflowVals[i] += 1
         print "%s %s: Cutflow: " % (self.channel, self.sample_name), cutflowVals
-
         cutflowHist = rt.TH1F('cutflow','cutflow',len(cutflowVals)+1,0,len(cutflowVals)+1)
         cutflowHist.SetBinContent(1,numEvts)
         for i in range(len(cutflowVals)):
             cutflowHist.SetBinContent(i+2,cutflowVals[i])
         # rename cutflow bins if self.cutflow_labels defined
         if hasattr(self,'cutflow_labels'):
-            pass # TODO
+            cutflowHist.GetXaxis().SetBinLabel(1, "No cuts")
+            for i in range(len(self.cutflow_labels)):
+                cutflowHist.GetXaxis().SetBinLabel(i+2, self.cutflow_labels[i]) 
+            cutflowHist.GetXaxis().SetBinLabel(len(self.cutflow_labels)+2, "test1")
+            #cutflowHist.GetXaxis().SetBinLabel(len(self.cutflow_labels)+3, "test2")
+            #pass # TODO
         cutflowHist.Write()
 
     def finish(self):

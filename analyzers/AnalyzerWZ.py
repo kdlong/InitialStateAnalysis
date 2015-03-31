@@ -6,6 +6,7 @@ Author: Devin N. Taylor, UW-Madison
 '''
 
 from AnalyzerBase import *
+import math
 
 class AnalyzerWZ(AnalyzerBase):
     '''
@@ -34,7 +35,8 @@ class AnalyzerWZ(AnalyzerBase):
             'w': ['em','n'],
             'z': ['em','em'],
         }
-        self.cutflow_labels = ['Trigger','Fiducial','Tight ID','Isolation','3l Mass','Z Selection','W Selection']
+        #self.cutflow_labels = ['Gen Fiducial', 'Fiducial + loose p_{T}','Trigger','Tight ID','Isolation','3l Mass','Z Selection','W Selection']
+        self.cutflow_labels = ['gen fid (no p_{T})','Trigger','Tight ID', 'Isolation', '3l Mass','Z Selection','W Selection']
         super(AnalyzerWZ, self).__init__(sample_location, out_file, period)
 
     ###############################
@@ -69,16 +71,55 @@ class AnalyzerWZ(AnalyzerBase):
     ##########################
     ### Defin preselection ###
     ##########################
+
+
     def preselection(self,rtrow):
         cuts = CutSequence()
-        cuts.add(self.trigger)
+        #cuts.add(self.genfiducial)
         cuts.add(self.fiducial)
-        cuts.add(self.ID_tight)
-        cuts.add(self.isolation)
-        cuts.add(self.mass3l)
-        cuts.add(self.zSelection)
-        cuts.add(self.wSelection)
+        cuts.add(self.trigger)
+        #cuts.add(self.ID_tight)
+        #cuts.add(self.isolation)
+        #cuts.add(self.mass3l)
+        #cuts.add(self.zSelection)
+        #cuts.add(self.wSelection)
         return cuts
+
+    def selection(self,rtrow):
+        cuts = CutSequence()
+        #cuts.add(self.genfiducial)
+        cuts.add(self.fiducial)
+        cuts.add(self.trigger)
+        #cuts.add(self.ID_tight)
+        #cuts.add(self.isolation)
+        #cuts.add(self.mass3l)
+        #cuts.add(self.zSelection)
+        #cuts.add(self.wSelection)
+        return cuts
+
+    def getIdArgs(self,type):
+        kwargs = {}
+        if type=='Tight':
+            kwargs['idDef'] = {
+                'e':'Medium',
+                'm':'Tight',
+                't':'Medium'
+            }
+            kwargs['isoCut'] = {
+                'e':0.15,
+                'm':0.12
+            }
+        if type=='Loose':
+            kwargs['idDef'] = {
+                'e':'Loose',
+                'm':'Loose',
+                't':'Loose'
+            }
+            kwargs['isoCut'] = {
+                'e':0.2,
+                'm':0.2
+            }
+        return kwargs
 
     def trigger(self, rtrow):
         triggers = ["mu17ele8isoPass", "mu8ele17isoPass",
@@ -110,9 +151,30 @@ class AnalyzerWZ(AnalyzerBase):
             if getattr(rtrow, '%sAbsEta' % l) > etacut:
                 return False
         return True
-
-    def ID_tight(self, rtrow):
-        return self.ID(rtrow,id='wztightnoiso',*self.objects)
+    
+    def genfiducial(self, rtrow):
+        for l in self.objects:
+            genEta = getattr(rtrow, '%sGenEta' % l)
+            if genEta == -999:
+                return False
+            genPt = getattr(rtrow, '%sGenEnergy' % l)/math.cosh(genEta)
+            pdgID = getattr(rtrow, '%sGenPdgId' % l)
+            if l[0]=='e':# and abs(pdgID) == 11:
+                ptcut = 10.0
+                etacut = 2.5
+            elif l[0]=='m':# and abs(pdgID) == 13:
+                ptcut = 10.0
+                etacut = 2.4
+            elif l[0]=='t':# and abs(pdgID) == 15:
+                ptcut = 20.0
+                etacut = 2.3
+        #    if genPt < ptcut:
+            #    print "Failed gen pt Cut: pt was %s" % genPt
+         #       return False
+            if abs(genEta) > etacut:
+            #    print "Failed gen Eta cut: eta was %s" % genEta
+                return False
+        return True
 
     def isolation(self, rtrow):
         for l in self.objects:
@@ -124,11 +186,21 @@ class AnalyzerWZ(AnalyzerBase):
                 isocut = 0.12
             if l[0] == 't': continue # no iso cut on tau
             if getattr(rtrow, '%s%s' %(l,isotype)) > isocut: return False
-
         return True
 
     def mass3l(self,rtrow):
         return rtrow.Mass > 100.
+
+    def ID_loose(self, rtrow):
+        return self.ID(rtrow,*self.objects,**self.getIdArgs('Loose'))
+
+    def ID_tight(self, rtrow):
+        return self.ID(rtrow,*self.objects,**self.getIdArgs('Tight'))
+
+    def trigger_threshold(self, rtrow):
+        pts = [getattr(rtrow, "%sPt" % l) for l in self.objects]
+        pts.sort(reverse=True)
+        return pts[0] > 25.0 and pts[1] > 15.0
 
     def zSelection(self,rtrow):
         leps = self.objects

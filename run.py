@@ -44,12 +44,14 @@ def get_sample_names(analysis,period,samples):
             'Hpp4l': 'N/A', 
         },
         '13': {
-            'WZ'   : '2015-02-25-13TeV',
+            #'WZ'   : '2015-02-25-13TeV',
+            'WZ'   : '2015-03-30-WZ_ntuples_test',
             'Hpp3l': '2015-02-27-13TeV-3l',
             'Hpp4l': '2015-02-27-13TeV-4l',
         },
     }
-    root_dir = '/hdfs/store/user/dntaylor/data/%s' % ntupleDict[period][analysis]
+    #root_dir = '/hdfs/store/user/dntaylor/data/%s' % ntupleDict[period][analysis]
+    root_dir = '/hdfs/store/user/kdlong/%s' % ntupleDict[period][analysis]
     #root_dir = 'root://cmsxrootd.fnal.gov//store/user/dntaylor/data/%s' % ntupleDict[period][analysis]
 
     sample_names = [os.path.basename(fname)
