@@ -35,6 +35,7 @@ class AnalyzerWZ(AnalyzerBase):
             'z1': ['em','em'],
         }
         self.cutflow_labels = ['Trigger','Fiducial','ID','3l Mass','Z Selection','W Selection']
+        self.alternateIds, self.alternateIdMap = self.defineAlternateIds()
         super(AnalyzerWZ, self).__init__(sample_location, out_file, period)
 
     ###############################
@@ -66,6 +67,51 @@ class AnalyzerWZ(AnalyzerBase):
 
         return ([massdiff], leps)
 
+    # overide good_to_store
+    # will store via veto
+    @staticmethod
+    def good_to_store(rtrow, cand1, cand2):
+        '''
+        Veto on 4th lepton
+        '''
+        return (rtrow.eVetoMVAIsoVtx + rtrow.muVetoPt5IsoIdVtx == 0)
+
+    def defineAlternateIds(self):
+        elecIds = ['Veto', 'Loose', 'Medium', 'Tight', 'Trig', 'NonTrig', 'ZZLoose', 'ZZTight']
+        muonIds = ['Loose', 'Tight', 'ZZLoose', 'ZZTight']
+        elecIsos = [0.5, 0.2, 0.15]
+        muonIsos = [0.4, 0.2, 0.12]
+        idList = []
+        idMap = {}
+        for id in elecIds:
+            for iso in elecIsos:
+                idName = 'elec%s%0.2f' % (id, iso)
+                idName = idName.replace('.','p')
+                idList += [idName]
+                idMap[idName] = {
+                    'idDef' : {
+                        'e': id
+                    },
+                    'isoCut' : {
+                        'e': iso
+                    }
+                }
+        for id in muonIds:
+            for iso in muonIsos:
+                idName = 'muon%s%0.2f' % (id, iso)
+                idName = idName.replace('.','p')
+                idList += [idName]
+                idMap[idName] = {
+                    'idDef' : {
+                        'm': id
+                    },
+                    'isoCut' : {
+                        'm': iso
+                    }
+                }
+        return idList, idMap
+                
+
     ###########################
     ### Define preselection ###
     ###########################
@@ -73,10 +119,11 @@ class AnalyzerWZ(AnalyzerBase):
         cuts = CutSequence()
         cuts.add(self.trigger)
         cuts.add(self.fiducial)
-        cuts.add(self.ID_loose)
-        cuts.add(self.mass3l)
-        cuts.add(self.zSelection)
-        cuts.add(self.wSelection)
+        cuts.add(self.passAnyId)
+        #cuts.add(self.ID_loose)
+        #cuts.add(self.mass3l)
+        #cuts.add(self.zSelection)
+        #cuts.add(self.wSelection)
         return cuts
 
     def selection(self,rtrow):
@@ -111,6 +158,18 @@ class AnalyzerWZ(AnalyzerBase):
                 'e':0.2,
                 'm':0.2
             }
+        if type=='Veto':
+            kwargs['idDef'] = {
+                'e':'Veto',
+                'm':'Loose',
+                't':'Loose'
+            }
+            kwargs['isoCut'] = {
+                'e':0.4,
+                'm':0.4
+            }
+        if type in self.alternateIds:
+            kwargs = self.alternateIdMap[type]
         return kwargs
 
     def trigger(self, rtrow):
@@ -141,6 +200,17 @@ class AnalyzerWZ(AnalyzerBase):
             if getattr(rtrow, '%sAbsEta' % l) > etacut:
                 return False
         return True
+
+    def passAnyId(self,rtrow):
+        '''Check to make sure the leptons pass at least 1 ID'''
+        passCheck = {'e': False, 'm': False}
+        for altId in self.alternateIds:
+           if passCheck[altId[0]]: continue
+           if self.ID(rtrow,*self.objects,**self.getIdArgs(altId)): passCheck[altId[0]] = True
+        return passCheck['e'] and passCheck['m']
+
+    def ID_veto(self, rtrow):
+        return self.ID(rtrow,*self.objects,**self.getIdArgs('Veto'))
 
     def ID_loose(self, rtrow):
         return self.ID(rtrow,*self.objects,**self.getIdArgs('Loose'))

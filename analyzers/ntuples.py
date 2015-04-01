@@ -8,11 +8,11 @@ from itertools import product
 import ROOT as rt
 from array import array
 
-def buildNtuple(object_definitions,states,channelName,final_states):
+def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
     '''
     A function to build an initial state ntuple for AnalyzerBase.py
     '''
-
+    alternateIds = kwargs.pop('altIds',[])
     finalStateObjects = 'emtjgn'
     structureDict = {}
     structOrder = []
@@ -37,6 +37,9 @@ def buildNtuple(object_definitions,states,channelName,final_states):
         promptString = ''.join([str(x) for x in prompts])
         strToProcess += "Int_t pass_%s;" % promptString
         strForBranch += "pass_%s:" % promptString
+    for altId in alternateIds:
+        strToProcess += "Int_t pass_%s;" % altId
+        strForBranch += "pass_%s:" % altId
     strToProcess += "};"
     strForBranch = strForBranch[:-1] # remove trailing :
     rt.gROOT.ProcessLine(strToProcess)

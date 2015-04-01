@@ -29,8 +29,8 @@ def plotDistributions(plotMethod,myCut,nl,isControl,**kwargs):
         plotMethod('h1.mass',[24,0,600],savedir+'hppMass',yaxis='Events/25.0 GeV/c^{2}',xaxis='M(l^{+}l^{+}) (GeV/c^{2})',lumitext=33,logy=int(not isControl),cut=myCut,**kwargs)
         plotMethod('h1.mass',[24,0,600],savedir+'hppMass_mod',yaxis='Events/25.0 GeV/c^{2}',xaxis='M(l^{+}l^{+}) (GeV/c^{2})',lumitext=33,legendpos=41,logy=0,cut=myCut,**kwargs)
         plotMethod('h1.dPhi',[32,0,3.2],savedir+'hppDphi',yaxis='Events/0.1 rad',xaxis='#Delta#phi(l^{+}l^{+}) (rad)',legendpos=41,lumitext=33,logy=0,cut=myCut,**kwargs)
-    plotMethod('finalstate.sT',[40,0,1000],savedir+'sT',yaxis='Events/25.0 GeV/c^{2}',xaxis='S_{T} (GeV/c^{2})',lumitext=33,logy=int(not isControl),cut=myCut,**kwargs)
-    plotMethod('finalstate.sT',[50,0,500],savedir+'sT_zoom',yaxis='Events/10.0 GeV/c^{2}',xaxis='S_{T} (GeV/c^{2})',lumitext=33,logy=int(not isControl),cut=myCut,**kwargs)
+    plotMethod('finalstate.sT',[40,0,1000],savedir+'sT',yaxis='Events/25.0 GeV/c^{2}',xaxis='S_{T} (GeV/c^{2})',lumitext=33,logy=0,cut=myCut,**kwargs)
+    plotMethod('finalstate.sT',[50,0,500],savedir+'sT_zoom',yaxis='Events/10.0 GeV/c^{2}',xaxis='S_{T} (GeV/c^{2})',lumitext=33,logy=0,cut=myCut,**kwargs)
     plotMethod('finalstate.jetVeto20',[8,0,8],savedir+'numJets20',yaxis='Events',xaxis='Number of Jets (p_{T}>20 GeV)',lumitext=33,logy=0,cut=myCut,**kwargs)
     plotMethod('finalstate.jetVeto30',[8,0,8],savedir+'numJets30',yaxis='Events',xaxis='Number of Jets (p_{T}>30 GeV)',lumitext=33,logy=0,cut=myCut,**kwargs)
     plotMethod('finalstate.jetVeto40',[8,0,8],savedir+'numJets40',yaxis='Events',xaxis='Number of Jets (p_{T}>40 GeV)',lumitext=33,logy=0,cut=myCut,**kwargs)
@@ -38,7 +38,8 @@ def plotDistributions(plotMethod,myCut,nl,isControl,**kwargs):
     plotMethod('finalstate.muonVeto10Loose',[8,0,8],savedir+'muonVeto10',yaxis='Events',xaxis='Muon Veto (p_{T}>10 GeV)',lumitext=33,logy=0,cut=myCut,**kwargs)
     plotMethod('finalstate.muonVeto15',[8,0,8],savedir+'muonVeto15',yaxis='Events',xaxis='Muon Veto (p_{T}>15 GeV)',lumitext=33,logy=0,cut=myCut,**kwargs)
     plotMethod('finalstate.elecVeto10',[8,0,8],savedir+'elecVeto10',yaxis='Events',xaxis='Electron Veto (p_{T}>10 GeV)',lumitext=33,logy=0,cut=myCut,**kwargs)
-    plotMethod('finalstate.met',[40,0,200],savedir+'met',yaxis='Events/5.0 GeV',xaxis='E_{T}^{miss} (GeV)',lumitext=33,logy=int(not isControl),cut=myCut,**kwargs)
+    plotMethod('finalstate.met',[40,0,200],savedir+'met',yaxis='Events/5.0 GeV',xaxis='E_{T}^{miss} (GeV)',lumitext=33,logy=0,cut=myCut,**kwargs)
+    plotMethod('finalstate.mass',[40,0,400],savedir+'mass',yaxis='Events/10.0 GeV',xaxis='Mass (GeV)',lumitext=33,logy=0,cut=myCut,**kwargs)
     plotMethod('z1.mass',[42,70,112],savedir+'z1Mass',yaxis='Events/1.0 GeV',xaxis='M(l^{+}l^{-}) (Z1) (GeV)',legendpos=43,logy=0,cut=myCut,**kwargs)
     plotMethod('z1.mass',[7,80.5,101.5],savedir+'z1Mass_wideBin',yaxis='Events/3.0 GeV',xaxis='M(l^{+}l^{-}) (Z1) (GeV)',legendpos=43,logy=0,cut=myCut,**kwargs)
     plotMethod('z1.mass',[80,0,240],savedir+'z1Mass_fullWindow',yaxis='Events/3.0 GeV',xaxis='M(l^{+}l^{-}) (Z1) (GeV)',legendpos=43,logy=0,cut=myCut,**kwargs)
@@ -62,6 +63,7 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
     blind = kwargs.pop('blind',True)
     mass = kwargs.pop('mass',500)
     runTau = kwargs.pop('runTau',False)
+    myCut = kwargs.pop('myCut','select.passTight')
     plotFinalStates = kwargs.pop('plotFinalStates',False)
     plotJetBins = kwargs.pop('plotJetBins',False)
     plotOverlay = kwargs.pop('plotOverlay',False)
@@ -72,7 +74,7 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
         print "Unrecognized parameter '" + key + "' = " + str(value)
         return 0
 
-    print "MKPLOTS:%s:%s:%iTeV: Mass: %i" % (analysis,channel,runPeriod,mass)
+    if useSignal: print "MKPLOTS:%s:%s:%iTeV: Mass: %i" % (analysis,channel,runPeriod,mass)
     isControl = analysis != channel
     nl = 3 if analysis == 'WZ' or analysis == 'Hpp3l' else 4
     ntuples = 'ntuples%s_%stev_%s' % (analysis,runPeriod,channel)
@@ -92,7 +94,6 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
         }
 
     finalStates, leptons = getChannels(nl,runTau=runTau)
-    myCut = 'select.passTight'
     if channel == 'TT': myCut += '&&%il.jetVeto30>1'%nl
     print 'MKPLOTS:%s:%s:%iTeV: Cuts to be applied: %s' % (analysis, channel, runPeriod, myCut)
     dataplot = (isControl or not blind) and runPeriod in [7,8]
@@ -268,6 +269,7 @@ def parse_command_line(argv):
     parser.add_argument('-am','--allMasses',action='store_true',help='Run over all masses')
     parser.add_argument('-ac','--allControls',action='store_true',help='Run over all controls for a given analysis (3l, 4l)')
     parser.add_argument('-fr','--doFakeRate',action='store_true',help='Make fake rate plots and output fake rate histograms')
+    parser.add_argument('-c','--cut',type=str,default='select.passTight',help='Cut to be applied to plots (default = "select.passTight").')
     args = parser.parse_args(argv)
 
     return args
@@ -277,16 +279,12 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
 
-    if argv[0] == 'test':
-        plotTest()
-        return 0
-
     args = parse_command_line(argv)
 
     massLists = {
         13 : {
-            '3l' : [500],
-            '4l' : [500]
+            'Hpp3l' : [500],
+            'Hpp4l' : [500]
         }, 
         8 : {
             '3l' : [170, 200, 250, 300, 350, 400, 450, 500, 600, 700],
@@ -305,12 +303,12 @@ def main(argv=None):
         plotFakeRate(args.analysis,args.channel,args.period)
     elif args.allMasses:
         for m in massLists[args.period][args.channel]:
-            plotRegion(args.analysis,args.channel,args.period,plotFinalStates=args.plotFinalStates,runTau=args.runTau,blind=args.unblind,mass=m,plotJetBins=args.plotJetBins,plotOveraly=args.plotOverlay,plotShapes=args.plotShapes,plotCutFlow=args.plotCutFlow)
+            plotRegion(args.analysis,args.channel,args.period,plotFinalStates=args.plotFinalStates,runTau=args.runTau,blind=args.unblind,mass=m,plotJetBins=args.plotJetBins,plotOveraly=args.plotOverlay,plotShapes=args.plotShapes,plotCutFlow=args.plotCutFlow,myCut=args.cut)
     elif args.allControls:
         for control in controlList[args.channel]:
-            plotRegion(args.analysis,control,args.period,plotFinalStates=args.plotFinalStates,runTau=args.runTau,blind=args.unblind,mass=args.mass,plotJetBins=args.plotJetBins,plotOverlay=args.plotOverlay,plotShapes=args.plotShapes,plotCutFlow=args.plotCutFlow)
+            plotRegion(args.analysis,control,args.period,plotFinalStates=args.plotFinalStates,runTau=args.runTau,blind=args.unblind,mass=args.mass,plotJetBins=args.plotJetBins,plotOverlay=args.plotOverlay,plotShapes=args.plotShapes,plotCutFlow=args.plotCutFlow,myCut=args.cut)
     else:
-        plotRegion(args.analysis,args.channel,args.period,plotFinalStates=args.plotFinalStates,runTau=args.runTau,blind=args.unblind,mass=args.mass,plotJetBins=args.plotJetBins,plotOverlay=args.plotOverlay,plotShapes=args.plotShapes,plotCutFlow=args.plotCutFlow)
+        plotRegion(args.analysis,args.channel,args.period,plotFinalStates=args.plotFinalStates,runTau=args.runTau,blind=args.unblind,mass=args.mass,plotJetBins=args.plotJetBins,plotOverlay=args.plotOverlay,plotShapes=args.plotShapes,plotCutFlow=args.plotCutFlow,myCut=args.cut)
 
     return 0
 

@@ -95,7 +95,8 @@ class AnalyzerBase(object):
             states = [self.initial_states] + self.other_states
         else:
             states = [self.initial_states]
-        self.ntuple, self.branches = buildNtuple(self.object_definitions,states,self.channel,self.final_states)
+        if not hasattr(self,'alternateIds'): self.alternateIds = []
+        self.ntuple, self.branches = buildNtuple(self.object_definitions,states,self.channel,self.final_states,altIds=self.alternateIds)
 
     def analyze(self,**kwargs):
         '''
@@ -255,6 +256,8 @@ class AnalyzerBase(object):
             for o in range(len(allowedObjects)):
                 promptDict[allowedObjects[o]] = prompts[o]
             ntupleRow["select.pass_%s"%promptString] = int(self.npass(rtrow,promptDict,**self.getIdArgs('Tight')))
+        for altId in self.alternateIds:
+            ntupleRow["select.pass_%s"%altId] = int(self.ID(rtrow,*self.objects,**self.alternateIdMap[altId]))
 
         
         ntupleRow["event.evt"] = int(rtrow.evt)
@@ -425,6 +428,7 @@ class AnalyzerBase(object):
         idDef = kwargs.pop('idDef',{})
         isoCut = kwargs.pop('isoCut',{})
         for obj in objects:
+            if obj[0] not in idDef: continue
             type = idDef[obj[0]]
             if 'ID_%s_%s' %(type,obj) in self.cache:
                 if not self.cache['ID_%s_%s'%(type,obj)]: return False
@@ -434,6 +438,7 @@ class AnalyzerBase(object):
                 if not result: return False
         if isoCut:
             for obj in objects:
+                if obj[0] not in isoCut: continue
                 if obj[0] == 'e':
                     isotype = "RelPFIsoRho"
                 if obj[0] == 'm':
