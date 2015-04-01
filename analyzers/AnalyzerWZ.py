@@ -29,12 +29,12 @@ class AnalyzerWZ(AnalyzerBase):
     def __init__(self, sample_location, out_file, period):
         self.channel = 'WZ'
         self.final_states = ['eee','eem','emm','mmm']
-        self.initial_states = ['z','w'] # in order of leptons returned in choose_objects
+        self.initial_states = ['z1','w1'] # in order of leptons returned in choose_objects
         self.object_definitions = {
-            'w': ['em','n'],
-            'z': ['em','em'],
+            'w1': ['em','n'],
+            'z1': ['em','em'],
         }
-        self.cutflow_labels = ['Trigger','Fiducial','Tight ID','Isolation','3l Mass','Z Selection','W Selection']
+        self.cutflow_labels = ['Trigger','Fiducial','ID','3l Mass','Z Selection','W Selection']
         super(AnalyzerWZ, self).__init__(sample_location, out_file, period)
 
     ###############################
@@ -66,28 +66,59 @@ class AnalyzerWZ(AnalyzerBase):
 
         return ([massdiff], leps)
 
-    ##########################
-    ### Defin preselection ###
-    ##########################
+    ###########################
+    ### Define preselection ###
+    ###########################
     def preselection(self,rtrow):
         cuts = CutSequence()
         cuts.add(self.trigger)
         cuts.add(self.fiducial)
-        cuts.add(self.ID_tight)
-        cuts.add(self.isolation)
+        cuts.add(self.ID_loose)
         cuts.add(self.mass3l)
         cuts.add(self.zSelection)
         cuts.add(self.wSelection)
         return cuts
 
+    def selection(self,rtrow):
+        cuts = CutSequence()
+        cuts.add(self.trigger)
+        cuts.add(self.fiducial)
+        cuts.add(self.ID_tight)
+        cuts.add(self.mass3l)
+        cuts.add(self.zSelection)
+        cuts.add(self.wSelection)
+        return cuts
+
+    def getIdArgs(self,type):
+        kwargs = {}
+        if type=='Tight':
+            kwargs['idDef'] = {
+                'e':'Medium',
+                'm':'Tight',
+                't':'Medium'
+            }
+            kwargs['isoCut'] = {
+                'e':0.15,
+                'm':0.12
+            }
+        if type=='Loose':
+            kwargs['idDef'] = {
+                'e':'Loose',
+                'm':'Loose',
+                't':'Loose'
+            }
+            kwargs['isoCut'] = {
+                'e':0.2,
+                'm':0.2
+            }
+        return kwargs
+
     def trigger(self, rtrow):
         triggers = ["mu17ele8isoPass", "mu8ele17isoPass",
-                    "doubleETightPass", "tripleEPass",
-                    "doubleMuPass", "doubleMuTrkPass"]
+                    "doubleETightPass", "doubleMuPass", "doubleMuTrkPass"]
 
         if self.period == '13':
-            triggers = ['muEPass', 'doubleMuPass',
-                        'doubleEPass', 'tripleEPass']
+            triggers = ['muEPass', 'doubleMuPass', 'doubleEPass']
 
         for t in triggers:
             if getattr(rtrow,t)>0:
@@ -111,21 +142,11 @@ class AnalyzerWZ(AnalyzerBase):
                 return False
         return True
 
+    def ID_loose(self, rtrow):
+        return self.ID(rtrow,*self.objects,**self.getIdArgs('Loose'))
+
     def ID_tight(self, rtrow):
-        return self.ID(rtrow,id='wztightnoiso',*self.objects)
-
-    def isolation(self, rtrow):
-        for l in self.objects:
-            if l[0] == 'e':
-                isotype = "RelPFIsoRho"
-                isocut = 0.15
-            if l[0] == 'm':
-                isotype = "RelPFIsoDBDefault"
-                isocut = 0.12
-            if l[0] == 't': continue # no iso cut on tau
-            if getattr(rtrow, '%s%s' %(l,isotype)) > isocut: return False
-
-        return True
+        return self.ID(rtrow,*self.objects,**self.getIdArgs('Tight'))
 
     def mass3l(self,rtrow):
         return rtrow.Mass > 100.
@@ -154,6 +175,7 @@ class AnalyzerWZ(AnalyzerBase):
 ##########################
 def parse_command_line(argv):
     parser = argparse.ArgumentParser()
+    parser.add_argument('analyzer', type=str)
     parser.add_argument('in_sample', type=str)
     parser.add_argument('out_file', type=str)
     parser.add_argument('period', type=str)
@@ -168,7 +190,7 @@ def main(argv=None):
 
     args = parse_command_line(argv)
 
-    analyzer = AnalyzerWZ(args.in_sample,args.out_file,args.period)
+    if args.analyzer == 'WZ': analyzer = AnalyzerWZ(args.in_sample,args.out_file,args.period)
     with analyzer as thisAnalyzer:
         thisAnalyzer.analyze()
 

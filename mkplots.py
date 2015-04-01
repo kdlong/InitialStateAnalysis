@@ -23,10 +23,12 @@ def plotKinematicsMethod(plotMethod,variables,savename,cuts,**kwargs):
 
 def plotDistributions(plotMethod,myCut,nl,isControl,**kwargs):
     savedir = kwargs.pop('savedir','')
+    analysis = kwargs.pop('analysis','')
     if savedir: savedir += '/'
-    plotMethod('h1.mass',[24,0,600],savedir+'hppMass',yaxis='Events/25.0 GeV/c^{2}',xaxis='M(l^{+}l^{+}) (GeV/c^{2})',lumitext=33,logy=int(not isControl),cut=myCut,**kwargs)
-    plotMethod('h1.mass',[24,0,600],savedir+'hppMass_mod',yaxis='Events/25.0 GeV/c^{2}',xaxis='M(l^{+}l^{+}) (GeV/c^{2})',lumitext=33,legendpos=41,logy=0,cut=myCut,**kwargs)
-    plotMethod('h1.dPhi',[32,0,3.2],savedir+'hppDphi',yaxis='Events/0.1 rad',xaxis='#Delta#phi(l^{+}l^{+}) (rad)',legendpos=41,lumitext=33,logy=0,cut=myCut,**kwargs)
+    if analysis in ['Hpp3l','Hpp4l']:
+        plotMethod('h1.mass',[24,0,600],savedir+'hppMass',yaxis='Events/25.0 GeV/c^{2}',xaxis='M(l^{+}l^{+}) (GeV/c^{2})',lumitext=33,logy=int(not isControl),cut=myCut,**kwargs)
+        plotMethod('h1.mass',[24,0,600],savedir+'hppMass_mod',yaxis='Events/25.0 GeV/c^{2}',xaxis='M(l^{+}l^{+}) (GeV/c^{2})',lumitext=33,legendpos=41,logy=0,cut=myCut,**kwargs)
+        plotMethod('h1.dPhi',[32,0,3.2],savedir+'hppDphi',yaxis='Events/0.1 rad',xaxis='#Delta#phi(l^{+}l^{+}) (rad)',legendpos=41,lumitext=33,logy=0,cut=myCut,**kwargs)
     plotMethod('finalstate.sT',[40,0,1000],savedir+'sT',yaxis='Events/25.0 GeV/c^{2}',xaxis='S_{T} (GeV/c^{2})',lumitext=33,logy=int(not isControl),cut=myCut,**kwargs)
     plotMethod('finalstate.sT',[50,0,500],savedir+'sT_zoom',yaxis='Events/10.0 GeV/c^{2}',xaxis='S_{T} (GeV/c^{2})',lumitext=33,logy=int(not isControl),cut=myCut,**kwargs)
     plotMethod('finalstate.jetVeto20',[8,0,8],savedir+'numJets20',yaxis='Events',xaxis='Number of Jets (p_{T}>20 GeV)',lumitext=33,logy=0,cut=myCut,**kwargs)
@@ -65,6 +67,7 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
     plotOverlay = kwargs.pop('plotOverlay',False)
     plotShapes = kwargs.pop('plotShapes',False)
     plotCutFlow = kwargs.pop('plotCutFlow',False)
+    useSignal = analysis in ['Hpp3l','Hpp4l']
     for key, value in kwargs.iteritems():
         print "Unrecognized parameter '" + key + "' = " + str(value)
         return 0
@@ -96,18 +99,21 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
 
     # now, setup the plotter
     plotter = Plotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod)
-    plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]+['Sig']])
+    if useSignal:
+        plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]+['Sig']])
+    else:
+        plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]])
     if dataplot: plotter.initializeDataSamples([sigMap[runPeriod]['data']])
     plotter.setIntLumi(intLumiMap[runPeriod])
     plotMode = 'plotMCDataRatio' if dataplot else 'plotMC'
     plotMethod = getattr(plotter,plotMode)
     # now, plot
     print "MKPLOTS:%s:%s:%iTeV: Plotting discriminating variables" % (analysis,channel, runPeriod)
-    plotDistributions(plotMethod,myCut,nl,isControl)
+    plotDistributions(plotMethod,myCut,nl,isControl,analysis=analysis)
     if plotJetBins:
         for jet in range(3):
             print "MKPLOTS:%s:%s:%iTeV: Plotting discriminating variables %i jet" % (analysis, channel, runPeriod, jet)
-            plotDistributions(plotMethod,myCut+'&&%il.jetVeto30==%i'%(nl,jet),nl,isControl,savedir='%ijet'%jet)
+            plotDistributions(plotMethod,myCut+'&&%il.jetVeto30==%i'%(nl,jet),nl,isControl,savedir='%ijet'%jet,analysis=analysis)
     print "MKPLOTS:%s:%s:%iTeV: Plotting kinematics" % (analysis, channel, runPeriod)
     plotKinematicsMethod(plotMethod,leptons,'Lepton',[myCut]*nl,logy=0)
     plotKinematicsMethod(plotMethod,leptons,'Electron',['%sFlv=="e"&&%s' %(x,myCut) for x in leptons],logy=0)
@@ -118,14 +124,14 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
         print "MKPLOTS:%s:%s:%iTeV: Plotting individual finalStates" % (analysis, channel, runPeriod)
         for c in finalStates:
             print "MKPLOTS:%s:%s:%iTeV: Channel %s" % (analysis, channel, runPeriod, c)
-            plotDistributions(plotMethod,myCut+'&&channel=="%s"'%c,nl,isControl,savedir=c)
+            plotDistributions(plotMethod,myCut+'&&channel=="%s"'%c,nl,isControl,savedir=c,analysis=analysis)
             if plotJetBins:
                 for jet in range(3):
                     print "MKPLOTS:%s:%s:%iTeV: Channel %s %i jet" %(analysis,channel, runPeriod, c, jet)
-                    plotDistributions(plotMethod,myCut+'&&channel=="%s"&&%il.jetVeto30==%i'%(c,nl,jet),nl,isControl,savedir=c+'/%ijet'%jet)
+                    plotDistributions(plotMethod,myCut+'&&channel=="%s"&&%il.jetVeto30==%i'%(c,nl,jet),nl,isControl,savedir=c+'/%ijet'%jet,analysis=analysis)
 
     # setup signal overlay plots
-    if plotOverlay:
+    if plotOverlay and useSignal:
         plotter = Plotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_overlay')
         plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]])
         plotter.initializeSignalSamples([sigMap[runPeriod]['Sig']])
@@ -135,7 +141,7 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
         plotMethod = getattr(plotter,plotMode)
         # plot the signal overlay
         print "MKPLOTS:%s:%s:%iTeV: Plotting signal overlay discriminating variables" % (analysis, channel, runPeriod)
-        plotDistributions(plotMethod,myCut,nl,isControl,savedir='overlay',signalscale=100)
+        plotDistributions(plotMethod,myCut,nl,isControl,savedir='overlay',signalscale=100,analysis=analysis)
         print "MKPLOTS:%s:%s:%iTeV: Plotting signal overlay kinematics" % (analysis, channel, runPeriod)
         plotKinematicsMethod(plotMethod,leptons,'Lepton',[myCut]*nl,signalscale=1000,savedir='overlay',logy=1)
         plotKinematicsMethod(plotMethod,leptons,'Electron',['%sFlv=="e"&&%s' %(x,myCut) for x in leptons],signalscale=100,savedir='overlay',logy=1)
@@ -146,7 +152,7 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
         print "MKPLOTS:%s:%s:%iTeV: Plotting shapes" % (analysis, channel, runPeriod)
         plotter = ShapePlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_shapes')
         plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]])
-        plotter.initializeSignalSamples([sigMap[runPeriod]['Sig']])
+        if useSignal: plotter.initializeSignalSamples([sigMap[runPeriod]['Sig']])
         if dataplot: plotter.initializeDataSamples([sigMap[runPeriod]['data']])
         plotter.setIntLumi(intLumiMap[runPeriod])
         plotter.plotMC('z1.mass',['channel=="mmm"','channel=="emm"'],[42,70,112],'zMass_mc_mm',yaxis='Normalized',xaxis='M(l^{+}l^{-}) (GeV)',logy=0,cut=myCut,cutNames=['mmm','emm'])
@@ -172,13 +178,14 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
             for i in range(len(cutFlowMap[channel]['cuts'])):
                 print 'MKPLOTS:%s:%s:%iTeV: Plotting cut flow selections %s' % (analysis, channel, runPeriod, cutFlowMap[channel]['labels_simple'][i])
                 thisCut = '&&'.join(cutFlowMap[channel]['cuts'][:i+1])
-                plotDistributions(plotMethod,'%s&%s'%(myCut,thisCut),nl,isControl,savedir='cutflow/%s'%cutFlowMap[channel]['labels_simple'][i])
+                plotDistributions(plotMethod,'%s&%s'%(myCut,thisCut),nl,isControl,savedir='cutflow/%s'%cutFlowMap[channel]['labels_simple'][i],analysis=analysis)
     plotter = CutFlowPlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_cutflow')
     plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]])
-    plotter.initializeSignalSamples([sigMap[runPeriod]['Sig']])
+    if useSignal: plotter.initializeSignalSamples([sigMap[runPeriod]['Sig']])
     if dataplot: plotter.initializeDataSamples([sigMap[runPeriod]['data']])
     plotter.setIntLumi(intLumiMap[runPeriod])
-    plotMode = 'plotCutFlowMCDataSignal' if dataplot else 'plotCutFlowMCSignal'
+    plotMode = 'plotCutFlowMCData' if dataplot else 'plotCutFlowMC'
+    if useSignal: plotMode = 'plotCutFlowMCDataSignal' if dataplot else 'plotCutFlowMCSignal'
     plotMethod = getattr(plotter,plotMode)
     plotMethod([x+'&&'+myCut for x in cutFlowMap[channel]['cuts']],'cutFlow',labels=cutFlowMap[channel]['labels'],lumitext=33)
     if channel=='3l':
@@ -192,7 +199,7 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
     plotMode = 'plotCutFlowMCData' if dataplot else 'plotCutFlowMC'
     plotMethod = getattr(plotter,plotMode)
     plotMethod([myCut]+['%s&&%s' %(x,myCut) for x in plotChannelCuts],'individualChannels',labels=['Total']+plotChannelStrings,nosum=True,lumitext=33,logy=0)
-    if channel in ['3l','4l']:
+    if channel in ['Hpp3l','Hpp4l']:
         plotter = CutFlowPlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_cutflowSelectionsChannels')
         plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]+['Sig']])
         if dataplot: plotter.initializeDataSamples([sigMap[runPeriod]['data']])
@@ -288,8 +295,8 @@ def main(argv=None):
     }
 
     controlList = {
-        '3l' : ['3l', 'WZ', 'TT', 'Z', 'TTW', 'TTZ'], #'QCD', 'Zfr'],
-        '4l' : ['4l', 'ZZ', 'TT']
+        'Hpp3l' : ['Hpp3l', 'WZ'],
+        'Hpp4l' : ['Hpp4l']
     }
 
     if args.period == 7:
