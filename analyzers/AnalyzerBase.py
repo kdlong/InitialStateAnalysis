@@ -96,7 +96,8 @@ class AnalyzerBase(object):
         else:
             states = [self.initial_states]
         if not hasattr(self,'alternateIds'): self.alternateIds = []
-        self.ntuple, self.branches = buildNtuple(self.object_definitions,states,self.channel,self.final_states,altIds=self.alternateIds)
+        if not hasattr(self,'doVBF'): self.doVBF = False
+        self.ntuple, self.branches = buildNtuple(self.object_definitions,states,self.channel,self.final_states,altIds=self.alternateIds,doVBF=self.doVBF)
 
     def analyze(self,**kwargs):
         '''
@@ -286,6 +287,15 @@ class AnalyzerBase(object):
         ntupleRow["finalstate.muonVeto10Loose"] = int(rtrow.muGlbIsoVetoPt10)
         ntupleRow["finalstate.muonVeto15"] = int(rtrow.muVetoPt15IsoIdVtx)
         ntupleRow["finalstate.elecVeto10"] = int(rtrow.eVetoMVAIsoVtx)
+        if self.doVBF:
+            ntupleRow["finalstate.vbfMass"] = float(rtrow.vbfMass)
+            ntupleRow["finalstate.vbfPt"] = float(rtrow.vbfdijetpt)
+            ntupleRow["finalstate.vbfPt1"] = float(rtrow.vbfj1pt)
+            ntupleRow["finalstate.vbfPt2"] = float(rtrow.vbfj2pt)
+            ntupleRow["finalstate.vbfEta1"] = float(rtrow.vbfj1eta)
+            ntupleRow["finalstate.vbfEta2"] = float(rtrow.vbfj2eta)
+            ntupleRow["finalstate.centralJetVeto20"] = float(rtrow.vbfJetVeto20)
+            ntupleRow["finalstate.centralJetVeto30"] = float(rtrow.vbfJetVeto30)
 
         def store_state(rtrow,ntupleRow,state,theObjects):
             objStart = 0

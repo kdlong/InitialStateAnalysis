@@ -36,6 +36,7 @@ class AnalyzerWZ(AnalyzerBase):
         }
         self.cutflow_labels = ['Trigger','Fiducial','ID','3l Mass','Z Selection','W Selection']
         self.alternateIds, self.alternateIdMap = self.defineAlternateIds()
+        self.doVBF = True
         super(AnalyzerWZ, self).__init__(sample_location, out_file, period)
 
     ###############################

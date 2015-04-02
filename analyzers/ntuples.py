@@ -13,6 +13,8 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
     A function to build an initial state ntuple for AnalyzerBase.py
     '''
     alternateIds = kwargs.pop('altIds',[])
+    doVBF = kwargs.pop('doVBF',False)
+
     finalStateObjects = 'emtjgn'
     structureDict = {}
     structOrder = []
@@ -69,13 +71,23 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
     structureDict['channel'] = [channelStruct, rt.AddressOf(channelStruct,'channel'),'channel/C']
     structOrder += ['channel']
 
-    rt.gROOT.ProcessLine(
-    "struct structFinalState_t {\
+    fsStrToProcess = "struct structFinalState_t {\
        Float_t mass;\
        Float_t sT;\
        Float_t met;\
-       Float_t metPhi;\
-       Int_t   jetVeto20;\
+       Float_t metPhi;"
+    fsStrForBranch = "mass/F:sT:met:metPhi:"
+
+    if doVBF:
+        fsStrToProcess += "Float_t vbfMass;\
+                           Float_t vbfPt;\
+                           Float_t vbfPt1;\
+                           Float_t vbfPt2;\
+                           Float_t vbfEta1;\
+                           Float_t vbfEta2;"
+        fsStrForBranch += "vbfMass:vbfPt:vbfPt1:vbfPt2:vbfEta1:vbfEta2:"
+
+    fsStrToProcess += "Int_t   jetVeto20;\
        Int_t   jetVeto30;\
        Int_t   jetVeto40;\
        Int_t   bjetVeto20;\
@@ -83,10 +95,19 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
        Int_t   muonVeto5;\
        Int_t   muonVeto10Loose;\
        Int_t   muonVeto15;\
-       Int_t   elecVeto10;\
-    };");
+       Int_t   elecVeto10;"
+    fsStrForBranch += "jetVeto20/I:jetVeto30:jetVeto40:bjetVeto20:bjetVeto30:muonVeto5:muonVeto10Loose:muonVeto15:elecVeto10:"
+
+    if doVBF:
+        fsStrToProcess += "Int_t   centralJetVeto20;\
+                           Int_t   centralJetVeto30;"
+        fsStrForBranch += "centralJetVeto20:centralJetVeto30:"
+
+    fsStrToProcess += "};"
+    fsStrForBranch = fsStrForBranch[:-1]
+    rt.gROOT.ProcessLine(fsStrToProcess);
     finalStateStruct = rt.structFinalState_t()
-    structureDict['finalstate'] = [finalStateStruct, finalStateStruct,'mass/F:sT:met:metPhi:jetVeto20/I:jetVeto30:jetVeto40:bjetVeto20:bjetVeto30:muonVeto5:muonVeto10Loose:muonVeto15:elecVeto10']
+    structureDict['finalstate'] = [finalStateStruct, finalStateStruct, fsStrForBranch]
     structOrder += ['finalstate']
 
     rt.gROOT.ProcessLine(
