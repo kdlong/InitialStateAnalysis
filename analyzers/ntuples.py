@@ -170,11 +170,12 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
                         Float_t metPhi;"
                 else:
                     objCount += 1
-                    strForBranch += "Pt%i:Eta%i:Phi%i:" % (objCount, objCount, objCount)
+                    strForBranch += "Pt%i:Eta%i:Phi%i:Iso%i:" % (objCount, objCount, objCount, objCount)
                     strToProcess += "\
                         Float_t Pt%i;\
                         Float_t Eta%i;\
-                        Float_t Phi%i;" % (objCount, objCount, objCount)
+                        Float_t Phi%i;\
+                        Float_t Iso%i;" % (objCount, objCount, objCount, objCount)
             objCount = 0
             for obj in val:
                 if obj == 'n': continue
@@ -185,6 +186,9 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
                     strToProcess += "\
                         Int_t   Chg%i;\
                         Int_t   PassTight%i;" % (objCount, objCount)
+                    for altId in alternateIds:
+                        strToProcess += "Int_t pass_%s%i;" % (altId, objCount)
+                        strForBranch += "pass_%s_%i:" % (altId, objCount)
             strForBranch = strForBranch[:-1] # remove trailing :
             strToProcess += "\
                 };"

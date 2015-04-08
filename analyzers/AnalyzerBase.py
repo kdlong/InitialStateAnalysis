@@ -328,8 +328,14 @@ class AnalyzerBase(object):
                         ntupleRow["%s.Pt%i" % (i,objCount)] = float(getattr(rtrow, "%sPt" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
                         ntupleRow["%s.Eta%i" % (i,objCount)] = float(getattr(rtrow, "%sEta" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
                         ntupleRow["%s.Phi%i" % (i,objCount)] = float(getattr(rtrow, "%sPhi" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
+                        if orderedFinalObjects[objCount-1][0]=='e': isoVar = 'RelPFIsoRho'
+                        if orderedFinalObjects[objCount-1][0]=='m': isoVar = 'RelPFIsoDBDefault'
+                        isoVal = float(getattr(rtrow, "%s%s" % (orderedFinalObjects[objCount-1], isoVar))) if orderedFinalObjects[objCount-1][0] in 'em' and theObjects else float(-9.)
+                        ntupleRow["%s.Iso%i" % (i,objCount)] = isoVal
                         ntupleRow["%s.Chg%i" % (i,objCount)] = float(getattr(rtrow, "%sCharge" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
                         ntupleRow["%s.PassTight%i" % (i,objCount)] = float(self.ID(rtrow,orderedFinalObjects[objCount-1],**self.getIdArgs('Tight'))) if theObjects else float(-9)
+                        for altId in self.alternateIds:
+                            ntupleRow["%s.pass_%s_%i"%(i,altId,objCount)] = int(self.ID(rtrow,orderedFinalObjects[objCount-1],**self.alternateIdMap[altId]) if theObjects else float(-9))
                 objStart += numObjects
 
 

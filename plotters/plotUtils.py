@@ -20,7 +20,7 @@ def python_mkdir(dir):
 
 def defineCutFlowMap(region,channels,mass):
     # define regions (based on number of taus in higgs candidate)
-    regionMap = { 'Hpp3l' : {}, 'Hpp4l' : {} }
+    regionMap = { 'Hpp3l' : {}, 'Hpp4l' : {}, 'WZ' : {} }
     regionMap['Hpp3l'][0] = {
         'st' : 'finalstate.sT>1.1*%f+60.' %mass,
         'zveto' : 'fabs(z1.mass-%f)>80.' %ZMASS,
@@ -60,6 +60,13 @@ def defineCutFlowMap(region,channels,mass):
         'dphi' : 'hN.dPhi<2.5',
         'mass' : None
     }
+    regionMap['WZ'][0] = {
+        'zpt' : '(z1.Pt1>20.&z1.Pt2>10.)',
+        'zmass' : 'fabs(z1.mass-%f)<20.' % ZMASS,
+        'wpt' : 'w1.Pt1>20.',
+        'met' : 'w1.met>30.',
+        'm3l' : 'finalstate.Mass>100.'
+    }
     # define cutmap to be returned
     cutMap = { 'cuts' : [], 'labels': [], 'labels_simple': [], 'preselection': [] }
     if region == 'Hpp3l':
@@ -85,6 +92,14 @@ def defineCutFlowMap(region,channels,mass):
                  'zveto' : '',
                  'dphi' : '',
                  'mass' : '' }
+    elif region == 'WZ':
+        cutMap['labels'] = ['Preselection (ID)','Z lepton p_{T}','Z window','W lepton p_{T}',\
+                            'E_{T}^{miss}','M_{3l}']
+        cutMap['labels_simple'] = ['Presel (ID)','Z lep pt', 'Z window', 'W lep pt',\
+                                   'MET', 'mass3l']
+        cutMap['preselection'] = ['All events','Three lepton','Trigger','Fiducial','4th lepton veto']
+        cutMap['cuts'] = ['1', regionMap['WZ'][0]['zpt'], regionMap['WZ'][0]['zmass'], regionMap['WZ'][0]['wpt'],\
+                          regionMap['WZ'][0]['met'], regionMap['WZ'][0]['m3l']]
     else:
         cutMap['cuts'] = '1'
         cutMap['labels'] = ['%s Full Selection' %region]

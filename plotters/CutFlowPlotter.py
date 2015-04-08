@@ -14,40 +14,50 @@ class CutFlowPlotter(PlotterBase):
 
     def writeCutString(self,sample,cutList):
         '''A function to write out the number of events for a sample after a series of selections'''
-        cutString = '{:15s}'.format(sample if len(sample)<15 else sample[0:13])
+        cutString = '{:20s}'.format(sample if len(sample)<20 else sample[0:18])
         for cut in cutList:
-            cutString += '{:15.3f}'.format(cut)
+            cutString += '{:20.3f}'.format(cut)
         cutString += '\n'
         with open(self.cutFlowFile,'a') as txtfile:
             txtfile.write(cutString)
-
-    def getNumEntries(self,selection,sample):
+    def getNumEntries(self,selection,sample,**kwargs):
         '''Return the lumi scaled number of entries passing a given cut.'''
+        scaleup = kwargs.pop('scaleup',False)
         totalVal = 0
         if sample in self.sampleMergeDict:
             for s in self.sampleMergeDict[sample]:
                 tree = self.samples[s]['file'].Get(self.analysis)
-                #selTrees = [tree]
-                #self.savefile.cd()
-                #for sel in selections:
-                #    selTrees += [selTrees[-1].CopyTree(sel)]
-                #val = selTrees[-1].GetEntries('1')
-                val = tree.GetEntries(selection)
-                if 'data' not in s: 
+                if 'data' not in s:
+                    #if scaleup: tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale_up*event.trig_scale*(%s)' %selection,'goff')
+                    #if not scaleup: tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale*event.trig_scale*(%s)' %selection,'goff')
+                    tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale*(%s)' %selection,'goff')
+                    if not ROOT.gDirectory.Get("h%s" %s):
+                        val = 0
+                    else:
+                        hist = ROOT.gDirectory.Get("h%s" %s).Clone("hnew%s" %s)
+                        hist.Sumw2()
+                        val = hist.Integral()
                     lumi = self.samples[s]['lumi']
                     val = val * self.intLumi/lumi
+                else:
+                    val = tree.GetEntries(selection)
                 totalVal += val
         else:
             tree = self.samples[sample]['file'].Get(self.analysis)
-            #selTrees = [tree]
-            #self.savefile.cd()
-            #for sel in selections:
-            #    selTrees += [selTrees[-1].CopyTree(sel)]
-            #val = selTrees[-1].GetEntries('1')
-            val = tree.GetEntries(selection)
             if 'data' not in sample:
+                #if scaleup: tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale_up*event.trig_scale*(%s)' %selection,'goff')
+                #if not scaleup: tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale*event.trig_scale*(%s)' %selection,'goff')
+                tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale*(%s)' %selection,'goff')
+                if not ROOT.gDirectory.Get("h%s" %sample):
+                    val = 0
+                else:
+                    hist = ROOT.gDirectory.Get("h%s" %sample).Clone("hnew%s" %sample)
+                    hist.Sumw2()
+                    val = hist.Integral()
                 lumi = self.samples[sample]['lumi']
                 val = val * self.intLumi/lumi
+            else:
+                val = tree.GetEntries(selection)
             totalVal += val
         return totalVal
 
@@ -238,9 +248,9 @@ class CutFlowPlotter(PlotterBase):
             print "Unrecognized parameter '" + key + "' = " + str(value)
 
         self.cutFlowFile = self.plotDir+'/'+savename.replace('/','_')+'.txt'
-        cutString = '{0: <15}'.format(self.analysis)
+        cutString = '{0: <20}'.format(self.analysis)
         for label in labels:
-            cutString += '{0: <15}'.format(label if len(label)<15 else label[0:13])
+            cutString += '{0: <20}'.format(label if len(label)<20 else label[0:18])
         cutString += '\n'
         with open(self.cutFlowFile,'w') as txtfile:
             txtfile.write(cutString)
@@ -260,6 +270,7 @@ class CutFlowPlotter(PlotterBase):
         newymax = max(datamax,mc.GetMaximum()) if plotdata else mc.GetMaximum()
         mc.SetMaximum(1.2*newymax)
         if isprecf: mc.SetMinimum(1)
+        mc.SetMinimum(1)
         if labels:
             for bin in range(numSelections):
                 mc.GetHistogram().GetXaxis().SetBinLabel(bin+1,labels[bin])

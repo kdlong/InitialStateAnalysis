@@ -18,27 +18,50 @@ class FakeRatePlotter(PlotterBase):
     def getNumEntries(self,selection,sample,**kwargs):
         '''Return the lumi scaled number of entries passing a given cut.'''
         doError = kwargs.pop('doError',False)
+        scaleup = kwargs.pop('scaleup',False)
         totalVal = 0
         totalErr2 = 0
         if sample in self.sampleMergeDict:
             for s in self.sampleMergeDict[sample]:
                 tree = self.samples[s]['file'].Get(self.analysis)
-                val = tree.GetEntries(selection)
-                err = val ** 0.5
-                if 'data' not in s: 
+                if 'data' not in s:
+                    #if scaleup: tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale_up*event.trig_scale*(%s)' %selection,'goff')
+                    #if not scaleup: tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale*event.trig_scale*(%s)' %selection,'goff')
+                    tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale*(%s)' %selection,'goff')
+                    if not ROOT.gDirectory.Get("h%s" %s):
+                        val = 0
+                    else:
+                        hist = ROOT.gDirectory.Get("h%s" %s).Clone("hnew%s" %s)
+                        hist.Sumw2()
+                        val = hist.Integral()
+                    err = val ** 0.5
                     lumi = self.samples[s]['lumi']
                     val = val * self.intLumi/lumi
                     err = err * self.intLumi/lumi
+                else:
+                    val = tree.GetEntries(selection)
+                    err = val ** 0.5
                 totalVal += val
                 totalErr2 += err*err
         else:
             tree = self.samples[sample]['file'].Get(self.analysis)
-            val = tree.GetEntries(selection)
-            err = val ** 0.5
             if 'data' not in sample:
+                #if scaleup: tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale_up*event.trig_scale*(%s)' %selection,'goff')
+                #if not scaleup: tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale*event.trig_scale*(%s)' %selection,'goff')
+                tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale*(%s)' %selection,'goff')
+                if not ROOT.gDirectory.Get("h%s" %sample):
+                    val = 0
+                else:
+                    hist = ROOT.gDirectory.Get("h%s" %sample).Clone("hnew%s" %sample)
+                    hist.Sumw2()
+                    val = hist.Integral()
+                err = val ** 0.5
                 lumi = self.samples[sample]['lumi']
                 val = val * self.intLumi/lumi
                 err = err * self.intLumi/lumi
+            else:
+                val = tree.GetEntries(selection)
+                err = val ** 0.5
             totalVal += val
             totalErr2 += err*err
         totalErr = totalErr2 ** 0.5
@@ -50,12 +73,10 @@ class FakeRatePlotter(PlotterBase):
         fakeHist = ROOT.TH2F(savename,'',len(ptBins)-1,array('d',ptBins),len(etaBins)-1,array('d',etaBins))
         for p in range(len(ptBins)-1):
             for e in range(len(etaBins)-1):
-                kinCut = '%s>%f && %s<%f && abs(%s)>%f && abs(%s)<%f' %\
+                kinCut = '%s>%f & %s<%f & abs(%s)>%f & abs(%s)<%f' %\
                          (ptVar, ptBins[p], ptVar, ptBins[p+1], etaVar, etaBins[e], etaVar, etaBins[e+1])
-                numCut = '%s && %s' % (kinCut, passSelection)
-                denomCut = '%s && %s' % (kinCut, failSelection)
-                #num = self.getNumEntries(numCut,*self.data)
-                #denom = self.getNumEntries(denomCut,*self.data)
+                numCut = '%s & %s' % (kinCut, passSelection)
+                denomCut = '%s & %s' % (kinCut, failSelection)
                 num = 0
                 denom = 0
                 for sample in self.backgrounds:
