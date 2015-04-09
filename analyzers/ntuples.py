@@ -187,7 +187,7 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
                         Int_t   Chg%i;\
                         Int_t   PassTight%i;" % (objCount, objCount)
                     for altId in alternateIds:
-                        strToProcess += "Int_t pass_%s%i;" % (altId, objCount)
+                        strToProcess += "Int_t pass_%s_%i;" % (altId, objCount)
                         strForBranch += "pass_%s_%i:" % (altId, objCount)
             strForBranch = strForBranch[:-1] # remove trailing :
             strToProcess += "\
