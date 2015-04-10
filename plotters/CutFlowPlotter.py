@@ -20,46 +20,6 @@ class CutFlowPlotter(PlotterBase):
         cutString += '\n'
         with open(self.cutFlowFile,'a') as txtfile:
             txtfile.write(cutString)
-    def getNumEntries(self,selection,sample,**kwargs):
-        '''Return the lumi scaled number of entries passing a given cut.'''
-        scaleup = kwargs.pop('scaleup',False)
-        totalVal = 0
-        if sample in self.sampleMergeDict:
-            for s in self.sampleMergeDict[sample]:
-                tree = self.samples[s]['file'].Get(self.analysis)
-                if 'data' not in s:
-                    #if scaleup: tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale_up*event.trig_scale*(%s)' %selection,'goff')
-                    #if not scaleup: tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale*event.trig_scale*(%s)' %selection,'goff')
-                    tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale*(%s)' %selection,'goff')
-                    if not ROOT.gDirectory.Get("h%s" %s):
-                        val = 0
-                    else:
-                        hist = ROOT.gDirectory.Get("h%s" %s).Clone("hnew%s" %s)
-                        hist.Sumw2()
-                        val = hist.Integral()
-                    lumi = self.samples[s]['lumi']
-                    val = val * self.intLumi/lumi
-                else:
-                    val = tree.GetEntries(selection)
-                totalVal += val
-        else:
-            tree = self.samples[sample]['file'].Get(self.analysis)
-            if 'data' not in sample:
-                #if scaleup: tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale_up*event.trig_scale*(%s)' %selection,'goff')
-                #if not scaleup: tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale*event.trig_scale*(%s)' %selection,'goff')
-                tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale*(%s)' %selection,'goff')
-                if not ROOT.gDirectory.Get("h%s" %sample):
-                    val = 0
-                else:
-                    hist = ROOT.gDirectory.Get("h%s" %sample).Clone("hnew%s" %sample)
-                    hist.Sumw2()
-                    val = hist.Integral()
-                lumi = self.samples[sample]['lumi']
-                val = val * self.intLumi/lumi
-            else:
-                val = tree.GetEntries(selection)
-            totalVal += val
-        return totalVal
 
     def getSampleCutFlow(self,selections,cut,sample,**kwargs):
         '''Return a cut flow histogram with style'''

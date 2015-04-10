@@ -109,9 +109,10 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
     if channel == 'TT': myCut += '&&%il.jetVeto30>1'%nl
     print 'MKPLOTS:%s:%s:%iTeV: Cuts to be applied: %s' % (analysis, channel, runPeriod, myCut)
     dataplot = (isControl or not blind) and runPeriod in [7,8]
+    mergeDict = getMergeDict(runPeriod)
 
-    # now, setup the plotter
-    plotter = Plotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod)
+    # Plotting discriminating variables
+    plotter = Plotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,mergeDict=mergeDict)
     if useSignal:
         plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]+['Sig']])
     else:
@@ -120,18 +121,22 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
     plotter.setIntLumi(intLumiMap[runPeriod])
     plotMode = 'plotMCDataRatio' if dataplot else 'plotMC'
     plotMethod = getattr(plotter,plotMode)
-    # now, plot
     print "MKPLOTS:%s:%s:%iTeV: Plotting discriminating variables" % (analysis,channel, runPeriod)
     plotDistributions(plotMethod,myCut,nl,isControl,analysis=analysis)
-    if plotJetBins:
-        for jet in range(3):
-            print "MKPLOTS:%s:%s:%iTeV: Plotting discriminating variables %i jet" % (analysis, channel, runPeriod, jet)
-            plotDistributions(plotMethod,myCut+'&&%il.jetVeto30==%i'%(nl,jet),nl,isControl,savedir='%ijet'%jet,analysis=analysis)
+
+    # plotting kinematic plots
     print "MKPLOTS:%s:%s:%iTeV: Plotting kinematics" % (analysis, channel, runPeriod)
     plotKinematicsMethod(plotMethod,leptons,'Lepton',[myCut]*nl,logy=0)
     plotKinematicsMethod(plotMethod,leptons,'Electron',['%sFlv=="e"&&%s' %(x,myCut) for x in leptons],logy=0)
     plotKinematicsMethod(plotMethod,leptons,'Muon',['%sFlv=="m"&&%s' %(x,myCut) for x in leptons],logy=0)
     if runTau: plotKinematicsMethod(plotMethod,leptons,'Tau',['%sFlv=="t"&&%s' %(x,myCut) for x in leptons],logy=0)
+
+    # plot each jet bin
+    if plotJetBins:
+        for jet in range(3):
+            print "MKPLOTS:%s:%s:%iTeV: Plotting discriminating variables %i jet" % (analysis, channel, runPeriod, jet)
+            plotDistributions(plotMethod,myCut+'&&%il.jetVeto30==%i'%(nl,jet),nl,isControl,savedir='%ijet'%jet,analysis=analysis)
+
     # each channel
     if plotFinalStates:
         print "MKPLOTS:%s:%s:%iTeV: Plotting individual finalStates" % (analysis, channel, runPeriod)
@@ -145,7 +150,7 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
 
     # setup signal overlay plots
     if plotOverlay and useSignal:
-        plotter = Plotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_overlay')
+        plotter = Plotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_overlay',mergeDict=mergeDict)
         plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]])
         plotter.initializeSignalSamples([sigMap[runPeriod]['Sig']])
         if dataplot: plotter.initializeDataSamples([sigMap[runPeriod]['data']])
@@ -163,7 +168,7 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
     # plot shapes
     if plotShapes:
         print "MKPLOTS:%s:%s:%iTeV: Plotting shapes" % (analysis, channel, runPeriod)
-        plotter = ShapePlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_shapes')
+        plotter = ShapePlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_shapes',mergeDict=mergeDict)
         plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]])
         if useSignal: plotter.initializeSignalSamples([sigMap[runPeriod]['Sig']])
         if dataplot: plotter.initializeDataSamples([sigMap[runPeriod]['data']])
@@ -173,15 +178,13 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
         plotter.plotMC('z1.mass',['channel=="eee"','channel=="eme"'],[42,70,112],'zMass_mc_ee',yaxis='Normalized',xaxis='M(l^{+}l^{-}) (GeV)',logy=0,cut=myCut,cutNames=['eee','eme'])
         if dataplot: plotter.plotData('z1.mass',['channel=="eee"','channel=="eme"'],[42,70,112],'zMass_data_ee',yaxis='Normalized',xaxis='M(l^{+}l^{-}) (GeV)',logy=0,cut=myCut,cutNames=['eee','eme'])
 
-    # plot cut flows
-    #if isControl: return
+    # plot cut flows (each cut)
     print "MKPLOTS:%s:%s:%iTeV: Plotting cut flow" % (analysis, channel, runPeriod)
     cutFlowMap = {}
     cutFlowMap[channel] = defineCutFlowMap(channel,finalStates,mass)
     print cutFlowMap
-
     if channel in ['Hpp3l','Hpp4l']:
-        plotter = Plotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_cutFlowSelections')
+        plotter = Plotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_cutFlowSelections',mergeDict=mergeDict)
         if useSignal:
             plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]+['Sig']])
         else:
@@ -195,7 +198,9 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
                 print 'MKPLOTS:%s:%s:%iTeV: Plotting cut flow selections %s' % (analysis, channel, runPeriod, cutFlowMap[channel]['labels_simple'][i])
                 thisCut = '&&'.join(cutFlowMap[channel]['cuts'][:i+1])
                 plotDistributions(plotMethod,'%s&%s'%(myCut,thisCut),nl,isControl,savedir='cutflow/%s'%cutFlowMap[channel]['labels_simple'][i],analysis=analysis)
-    plotter = CutFlowPlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_cutflow')
+
+    # plot cut flows on same plot
+    plotter = CutFlowPlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_cutflow',mergeDict=mergeDict)
     plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]])
     if useSignal: plotter.initializeSignalSamples([sigMap[runPeriod]['Sig']])
     if dataplot: plotter.initializeDataSamples([sigMap[runPeriod]['data']])
@@ -204,19 +209,18 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
     if useSignal: plotMode = 'plotCutFlowMCDataSignal' if dataplot else 'plotCutFlowMCSignal'
     plotMethod = getattr(plotter,plotMode)
     plotMethod([x+'&&'+myCut for x in cutFlowMap[channel]['cuts']],'cutFlow',labels=cutFlowMap[channel]['labels'],lumitext=33)
-    if channel=='3l':
-        plotter.plotCutFlowMCDataSignal(cutFlowMap[channel]['preselection'],'cutFlow_preselection',labels=cutFlowMap[channel]['preselection'],legendpos=43,isprecf=True)
     if plotFinalStates:
         for c in fsToPlot:
             print "MKPLOTS:%s:%s:%iTeV: Plotting cut flow  %s" % (analysis, channel, runPeriod, c)
-            plotMethod(['%s&&channel=="%s"&&%s' %(x,c,myCut) for x in cutFlowMap[channel]['cuts']],'cutFlow'+c,labels=cutFlowMap[channel]['labels'],lumitext=33,logy=0)
+            plotMethod(['%s&&channel=="%s"&&%s' %(x,c,myCut) for x in cutFlowMap[channel]['cuts']],'%s/cutFlow'%c,labels=cutFlowMap[channel]['labels'],lumitext=33,logy=0)
+
     # setup individual channel cuts on same plot
     plotChannelStrings, plotChannelCuts = getChannelStringsCuts(channel,finalStates)
     plotMode = 'plotCutFlowMCData' if dataplot else 'plotCutFlowMC'
     plotMethod = getattr(plotter,plotMode)
     plotMethod([myCut]+['%s&&%s' %(x,myCut) for x in plotChannelCuts],'individualChannels',labels=['Total']+plotChannelStrings,nosum=True,lumitext=33,logy=0)
     if channel in ['Hpp3l','Hpp4l']:
-        plotter = CutFlowPlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_cutflowSelectionsChannels')
+        plotter = CutFlowPlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_cutflowSelectionsChannels',mergeDict=mergeDict)
         if useSignal:
             plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]+['Sig']])
         else:
@@ -251,7 +255,7 @@ def plotFakeRate(analysis,channel,runPeriod,**kwargs):
 
     finalStates = ['mme','mmm','mmt']
     
-    plotter = FakeRatePlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod)
+    plotter = FakeRatePlotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,mergeDict=mergeDict)
     plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]])
     plotter.setIntLumi(intLumiMap[runPeriod])
 

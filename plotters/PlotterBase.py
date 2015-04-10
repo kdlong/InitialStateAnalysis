@@ -35,32 +35,29 @@ class PlotterBase(object):
         period = kwargs.pop('period',13)
         blind = kwargs.pop('blind',False)
         rootName = kwargs.pop('rootName','plots')
+        mergeDict = kwargs.pop('mergeDict',{})
         for key, value in kwargs.iteritems():
             print "Unrecognized parameter '" + key + "' = " + str(value)
+
         # first, setup our canvas
-        W = 800
-        H = 600
-        T = 0.08
-        B = 0.12
-        L = 0.12
-        R = 0.04
-        self.canvas = ROOT.TCanvas("c1","c1",50,50,W,H)
+        self.W = 800
+        self.H = 600
+        self.T = 0.08
+        self.B = 0.12
+        self.L = 0.12
+        self.R = 0.04
+        self.canvas = ROOT.TCanvas("c1","c1",50,50,self.W,self.H)
         self.canvas.SetFillColor(0)
         self.canvas.SetBorderMode(0)
         self.canvas.SetFrameFillStyle(0)
         self.canvas.SetFrameBorderMode(0)
-        self.canvas.SetLeftMargin( L )
-        self.canvas.SetRightMargin( R )
-        self.canvas.SetTopMargin( T )
-        self.canvas.SetBottomMargin( B )
+        self.canvas.SetLeftMargin( self.L )
+        self.canvas.SetRightMargin( self.R )
+        self.canvas.SetTopMargin( self.T )
+        self.canvas.SetBottomMargin( self.B )
         self.canvas.SetTickx(0)
         self.canvas.SetTicky(0)
-        self.H = H
-        self.W = W
-        self.T = T
-        self.B = B
-        self.L = L
-        self.R = R
+
         # now, setup plotter conditions (some to be initalized later)
         self.backgroundInitialized = False
         self.background = []
@@ -82,49 +79,10 @@ class PlotterBase(object):
         self.plotDir = 'plots/'+saveDir
         python_mkdir(self.plotDir)
         python_mkdir(self.plotDir+'/png')
-        #python_mkdir(self.plotDir+'/pdf')
-        #python_mkdir(self.plotDir+'/eps')
         self.savefile = ROOT.TFile(self.plotDir+"/"+rootName+".root","recreate")
         self.samples = {}
         self.intLumi = 25000. # just a default 25 fb-1 for plotting without data
-        self.sampleMergeDict = {}
-        # 13 TeV sample aliases
-        self.sampleMergeDict['SingleTop'] = ['TBarToLeptons_s-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola',\
-            'TBarToLeptons_t-channel_Tune4C_CSA14_13TeV-aMCatNLO-tauola',\
-            'TToLeptons_s-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola',\
-            'TToLeptons_t-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola',\
-            'T_tW-channel-DR_Tune4C_13TeV-CSA14-powheg-tauola',\
-            'Tbar_tW-channel-DR_Tune4C_13TeV-CSA14-powheg-tauola']
-        self.sampleMergeDict['Diboson'] = ['WZJetsTo3LNu_Tune4C_13TeV-madgraph-tauola',\
-            'ZZTo4L_Tune4C_13TeV-powheg-pythia8']
-        self.sampleMergeDict['WZJets'] = ['WZJetsTo3LNu_Tune4C_13TeV-madgraph-tauola']
-        self.sampleMergeDict['ZZJets'] = ['ZZTo4L_Tune4C_13TeV-powheg-pythia8']
-        self.sampleMergeDict['TTJets'] = ['TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola']
-        self.sampleMergeDict['ZJets'] = ['DYJetsToLL_M-50_13TeV-madgraph-pythia8']
-        self.sampleMergeDict['WJets'] = ['WJetsToLNu_13TeV-madgraph-pythia8-tauola']
-        self.sampleMergeDict['TTVJets'] = ['TTWJets_Tune4C_13TeV-madgraph-tauola',\
-            'TTZJets_Tune4C_13TeV-madgraph-tauola']
-        # 8 TeV sample aliases
-        if period==8:
-            self.sampleMergeDict['WWJets'] = ['WWJetsTo2L2Nu_TuneZ2star_8TeV-madgraph-tauola']
-            self.sampleMergeDict['WZJets'] = ['WZJetsTo2L2Q_TuneZ2star_8TeV-madgraph-tauola',\
-                'WZJetsTo3LNu_TuneZ2_8TeV-madgraph-tauola']
-            self.sampleMergeDict['Diboson'] = ['WWJetsTo2L2Nu_TuneZ2star_8TeV-madgraph-tauola',\
-                'WZJetsTo2L2Q_TuneZ2star_8TeV-madgraph-tauola', 'WZJetsTo3LNu_TuneZ2_8TeV-madgraph-tauola',\
-                'ZZJetsTo4L_TuneZ2star_8TeV-madgraph-tauola']
-            self.sampleMergeDict['ZZJets'] = ['ZZJetsTo4L_TuneZ2star_8TeV-madgraph-tauola']
-            self.sampleMergeDict['SingleTop'] = ['T_s-channel_TuneZ2star_8TeV-powheg-tauola',\
-                'T_t-channel_TuneZ2star_8TeV-powheg-tauola', 'T_tW-channel-DR_TuneZ2star_8TeV-powheg-tauola',\
-                'Tbar_s-channel_TuneZ2star_8TeV-powheg-tauola', 'Tbar_t-channel_TuneZ2star_8TeV-powheg-tauola',\
-                'Tbar_tW-channel-DR_TuneZ2star_8TeV-powheg-tauola']
-            self.sampleMergeDict['TTJets'] = ['TTJetsFullLepMGDecays', 'TTJetsSemiLepMGDecays']
-            self.sampleMergeDict['ZJets'] = ['Z1jets_M50', 'Z2jets_M50_S10', 'Z3jets_M50',\
-                'Z4jets_M50']
-            #self.sampleMergeDict['ZJets'] = ['DYJetsToLL_M-50_TuneZ2Star_8TeV-madgraph-tarball']
-            self.sampleMergeDict['data'] = ['data_Run2012A', 'data_Run2012B', 'data_Run2012C',\
-                'data_Run2012D']
-            self.sampleMergeDict['TTVJets'] = ['TTZJets', 'TTWJets', 'TTWWJets', 'TTGJets']
-            self.sampleMergeDict['VVVJets'] = ['ZZZNoGstarJets', 'WWZNoGstarJets', 'WWWJets']
+        self.sampleMergeDict = mergeDict
 
     def reset(self):
         '''Reset the plotter class'''
@@ -142,10 +100,6 @@ class PlotterBase(object):
     def resetCanvas(self):
         '''Reset canvas after changes'''
         self.canvas.SetCanvasSize(self.W,self.H)
-        #self.canvas.SetFillColor(0)
-        #self.canvas.SetBorderMode(0)
-        #self.canvas.SetFrameFillStyle(0)
-        #self.canvas.SetFrameBorderMode(0)
         self.canvas.SetLeftMargin( self.L )
         self.canvas.SetRightMargin( self.R )
         self.canvas.SetTopMargin( self.T )
@@ -180,9 +134,6 @@ class PlotterBase(object):
         self.samples[sample]['file'] = ROOT.TFile(file)
         if 'data' in sample:
             lumifile = self.ntupleDir+'/%s.lumicalc.sum' % sample
-            #lumi = open(lumifile)
-            #self.samples[sample]['lumi'] = lumi.readline()
-            #lumi.close()
         else:
             cutflowHist = self.samples[sample]['file'].Get('cutflow')
             n_evts = cutflowHist.GetBinContent(1)
@@ -204,16 +155,65 @@ class PlotterBase(object):
             print "No data initialized, default to 25 fb-1"
             self.intLumi = 25000.
             return
-        #intLumi = 0.
-        #for sample in self.data:
-        #    # here only add samples for this channel
-        #    intLumi += self.samples[sample]['lumi']
-        #self.intLumi = intLumi
         self.intLumi = 25000.
 
     def setIntLumi(self,intLumi):
         '''Set the integrated luminosity to scale MC to'''
         self.intLumi = intLumi
+
+    def getNumEntries(self,selection,sample,**kwargs):
+        '''Return the lumi scaled number of entries passing a given cut.'''
+        doError = kwargs.pop('doError',False)
+        scaleup = kwargs.pop('scaleup',False)
+        unweighted = kwargs.pop('doUnweighted',False)
+        totalVal = 0
+        totalErr2 = 0
+        if sample in self.sampleMergeDict:
+            for s in self.sampleMergeDict[sample]:
+                tree = self.samples[s]['file'].Get(self.analysis)
+                if 'data' not in s and not unweighted:
+                    #if scaleup: tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale_up*event.trig_scale*(%s)' %selection,'goff')
+                    #if not scaleup: tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale*event.trig_scale*(%s)' %selection,'goff')
+                    tree.Draw('event.pu_weight>>h%s()'%s,'event.lep_scale*(%s)' %selection,'goff')
+                    if not ROOT.gDirectory.Get("h%s" %s):
+                        val = 0
+                    else:
+                        hist = ROOT.gDirectory.Get("h%s" %s).Clone("hnew%s" %s)
+                        hist.Sumw2()
+                        val = hist.Integral()
+                    err = val ** 0.5
+                    lumi = self.samples[s]['lumi']
+                    val = val * self.intLumi/lumi
+                    err = err * self.intLumi/lumi
+                else:
+                    val = tree.GetEntries(selection)
+                    err = val ** 0.5
+                totalVal += val
+                totalErr2 += err*err
+        else:
+            tree = self.samples[sample]['file'].Get(self.analysis)
+            if 'data' not in sample and not unweighted:
+                #if scaleup: tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale_up*event.trig_scale*(%s)' %selection,'goff')
+                #if not scaleup: tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale*event.trig_scale*(%s)' %selection,'goff')
+                tree.Draw('event.pu_weight>>h%s()'%sample,'event.lep_scale*(%s)' %selection,'goff')
+                if not ROOT.gDirectory.Get("h%s" %sample):
+                    val = 0
+                else:
+                    hist = ROOT.gDirectory.Get("h%s" %sample).Clone("hnew%s" %sample)
+                    hist.Sumw2()
+                    val = hist.Integral()
+                err = val ** 0.5
+                lumi = self.samples[sample]['lumi']
+                val = val * self.intLumi/lumi
+                err = err * self.intLumi/lumi
+            else:
+                val = tree.GetEntries(selection)
+                err = val ** 0.5
+            totalVal += val
+            totalErr2 += err*err
+        totalErr = totalErr2 ** 0.5
+        if doError: return totalVal, totalErr
+        return totalVal
 
     # TODO: Not right, check later
     def getOverflowUnderflow(self,hist):
@@ -241,13 +241,9 @@ class PlotterBase(object):
         if not cut: cut = '1'
         if 'data' not in sample and self.sqrts != 13: # TODO: dont forget to remove when we have data!
             tree.Draw(drawString,'(event.pu_weight*event.lep_scale)*('+cut+')','goff')
-            #tree.Draw(drawString,'event.pu_weight*('+cut+')','goff')
-            #tree.Draw(drawString,'event.lep_scale*('+cut+')','goff')
-            #tree.Draw(drawString,cut,'goff')
         else:
             tree.Draw(drawString,cut,'goff')
         if not ROOT.gDirectory.Get("h%s%s" %(sample, variable)):
-            #print "%s has no events" % sample
             return 0
         hist = ROOT.gDirectory.Get("h%s%s" %(sample, variable)).Clone("hmod%s%s"%(sample,variable))
         if len(binning) != 3: # variable binning (list of bin edges
@@ -373,7 +369,6 @@ class PlotterBase(object):
         self.period = 1*self.plot7TeV + 2*self.plot8TeV + 4*self.plot13TeV
         CMS_lumi.wrtieExtraText = preliminary
         CMS_lumi.extraText = "Preliminary" if plotdata else "Simulation Preliminary"
-        #CMS_lumi.extraText = "Preliminary"
         CMS_lumi.lumi_7TeV = "%0.1f fb^{-1}" % (float(self.intLumi)/1000.)
         CMS_lumi.lumi_8TeV = "%0.1f fb^{-1}" % (float(self.intLumi)/1000.)
         CMS_lumi.lumi_13TeV = "%0.1f fb^{-1}" % (float(self.intLumi)/1000.)
@@ -466,7 +461,6 @@ class PlotterBase(object):
 
     def save(self, savename):
         '''Save the canvas in multiple formats.'''
-        #for type in ['png', 'pdf', 'eps']:
         for type in ['png']:
             name = "%s/%s/%s.%s" % (self.plotDir, type, savename, type)
             python_mkdir(os.path.dirname(name))
