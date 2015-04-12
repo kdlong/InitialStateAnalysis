@@ -59,6 +59,7 @@ class PlotterBase(object):
         self.canvas.SetTicky(0)
 
         # now, setup plotter conditions (some to be initalized later)
+        self.j = 0 # global variable to prevent resusing histograms
         self.backgroundInitialized = False
         self.background = []
         self.dataInitialized = False
@@ -95,6 +96,7 @@ class PlotterBase(object):
         self.signal = []
         self.samples = {}
         self.intLumi = 25000.
+        self.j = 0
         self.resetCanvas()
 
     def resetCanvas(self):
@@ -215,24 +217,29 @@ class PlotterBase(object):
         if doError: return totalVal, totalErr
         return totalVal
 
-    # TODO: Not right, check later
-    def getOverflowUnderflow(self,hist):
+    def getOverflowUnderflow(self,hist,**kwargs):
         '''Get the plot with overflow and underflow bins'''
-        nx = hist.GetNbinsX()+1
+        under = kwargs.pop('underflow',False)
+        over = kwargs.pop('overflow',False)
+        if not under and not over: return hist
+        nx = hist.GetNbinsX()
+        if under: nx += 1
+        if over: nx += 1
         xbins = [0]*(nx+1)
         for i in range(nx):
             xbins[i]=hist.GetBinLowEdge(i+1)
         xbins[nx]=xbins[nx-1]+hist.GetBinWidth(nx)
-        tempName = hist.GetName()+'OU'
+        tempName = hist.GetName()+'OU%i' % self.j
         htmp = ROOT.TH1F(tempName, hist.GetTitle(), nx, array('d',xbins))
         for i in range(nx):
-            htmp.Fill(htmp.GetBinCenter(i), hist.GetBinContent(i))
+            htmp.Fill(htmp.GetBinCenter(i+1), hist.GetBinContent(i+1))
         htmp.Fill(hist.GetBinLowEdge(1)-1, hist.GetBinContent(0))
         htmp.SetEntries(hist.GetEntries())
         return htmp
 
     def getSingleVarHist(self,tree,sample,variable,binning,cut):
         '''Single variable, single sample hist'''
+        self.j += 1
         if 'data' not in sample: lumi = self.samples[sample]['lumi']
         if len(binning) == 3: # standard drawing
             drawString = "%s>>h%s%s(%s)" % (variable, sample, variable, ", ".join(str(x) for x in binning))
@@ -249,12 +256,11 @@ class PlotterBase(object):
         if len(binning) != 3: # variable binning (list of bin edges
             hist.Rebin(len(binning)-1,"hnew%s%s" %(sample,variable),array('d',binning))
             hist = ROOT.gDirectory.Get("hnew%s%s" %(sample,variable)).Clone("hnewmod%s%s"%(sample,variable))
-        if False: hist = self.getOverflowUnderflow(hist)
         if 'data' not in sample: # if it is mc, scale to intLumi
             hist.Scale(self.intLumi/lumi)
         return hist
 
-    def getHist(self, sample, variables, binning, cut, noFormat=False):
+    def getHist(self, sample, variables, binning, cut, noFormat=False, **kwargs):
         '''Return a histogram of a given variable from the given dataset with a cut'''
         hists = ROOT.TList()
         for v in range(len(variables)):
@@ -280,6 +286,7 @@ class PlotterBase(object):
         hist = hists[0].Clone("hmerged%s%s" % (sample, variables[0]))
         hist.Reset()
         hist.Merge(hists)
+        hist = self.getOverflowUnderflow(hist,**kwargs)
         # set styles
         if not noFormat: hist.SetTitle(self.dataStyles[sample]['name'])
         if sample in self.data: return hist
@@ -289,22 +296,22 @@ class PlotterBase(object):
             hist.SetFillStyle(self.dataStyles[sample]['fillstyle'])
         return hist
 
-    def getData(self, variables, binning, cut, noFormat=False):
+    def getData(self, variables, binning, cut, noFormat=False, **kwargs):
         '''Return a histogram of data for the given variable'''
         hists = ROOT.TList()
         for sample in self.data:
-            hist = self.getHist(sample, variables, binning, cut, noFormat)
+            hist = self.getHist(sample, variables, binning, cut, noFormat, **kwargs)
             hists.Add(hist)
         hist = hists[0].Clone("hdata%s" % variables[0])
         hist.Reset()
         hist.Merge(hists)
         return hist
 
-    def getMCStack(self, variables, binning, cut):
+    def getMCStack(self, variables, binning, cut, **kwargs):
         '''Return a stack of MC histograms'''
         mcstack = ROOT.THStack('hs%s' % variables[0],'mc stack')
         for sample in self.backgrounds:
-            hist = self.getHist(sample, variables, binning, cut)
+            hist = self.getHist(sample, variables, binning, cut, **kwargs)
             if not hist: continue
             mcstack.Add(hist)
         return mcstack

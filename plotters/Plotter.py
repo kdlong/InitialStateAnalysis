@@ -64,6 +64,8 @@ class Plotter(PlotterBase):
                xmax        double           maximum of xaxis
                ymin        double           minimum of yaxis
                ymax        double           maximum of yaxis
+               overflow    bool             plot overflow bin
+               underflow   bool             plot underflow bin
                blinder     list (double)    range to blind (2 elements)
                logy        bool             set logy plot
                logx        bool             set logx plot
@@ -82,6 +84,8 @@ class Plotter(PlotterBase):
         xmax = kwargs.pop('xmax', None)
         ymin = kwargs.pop('xmin', None)
         ymax = kwargs.pop('xmax', None)
+        overflow = kwargs.pop('overflow',False)
+        underflow = kwargs.pop('underflow',False)
         blinder = kwargs.pop('blinder', [])
         logy = kwargs.pop('logy', 1)
         logx = kwargs.pop('logx', 0)
@@ -142,12 +146,12 @@ class Plotter(PlotterBase):
 
         # hack to show both mc and data on same plot
         if plotdata:
-            data = self.getData(variables, binning, cut)
+            data = self.getData(variables, binning, cut, overflow=overflow, underflow=underflow)
             datamax = data.GetMaximum()
         
 
         # plot monte carlo
-        stack = self.getMCStack(variables,binning,cut)
+        stack = self.getMCStack(variables,binning,cut,overflow=overflow,underflow=underflow)
         stack.SetTitle("")
         stack.Draw("hist")
         stack.GetXaxis().SetTitle(xaxis)
@@ -171,7 +175,7 @@ class Plotter(PlotterBase):
         if plotsig:
             sigLabels = {}
             for signal in self.signal:
-                sighist = self.getHist(signal,variables,binning,cut)
+                sighist = self.getHist(signal,variables,binning,cut,overflow=overflow,underflow=underflow)
                 sighist.Scale(signalscale)
                 sighist.SetFillStyle(0)
                 sighist.SetLineWidth(2)
@@ -182,7 +186,7 @@ class Plotter(PlotterBase):
 
         # plot data
         if plotdata:
-            data = self.getData(variables, binning, cut)
+            data = self.getData(variables, binning, cut, overflow=overflow, underflow=underflow)
             data.SetMarkerStyle(20)
             data.SetMarkerSize(1.0)
             data.SetLineColor(ROOT.EColor.kBlack)

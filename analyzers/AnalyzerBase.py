@@ -66,6 +66,12 @@ def lep_order(a, b):
         return a_index > b_index or a[0] > b[0]
     return a[0] > b[0]
 
+def ordered(a,b):
+    '''
+    Return a,b in lep order.
+    '''
+    return [a,b] if lep_order(b,a) else [b,a]
+
 class AnalyzerBase(object):
     '''
     The basic analyzer class. Inheritor classes must define

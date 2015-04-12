@@ -75,41 +75,43 @@ class AnalyzerWZ(AnalyzerBase):
         '''
         Veto on 4th lepton
         '''
-        return (rtrow.eVetoMVAIsoVtx + rtrow.muVetoPt5IsoIdVtx == 0)
+        return (rtrow.eVetoWZ + rtrow.muVetoWZ == 0)
 
     def defineAlternateIds(self):
         elecIds = ['Veto', 'Loose', 'Medium', 'Tight', 'Trig', 'NonTrig', 'ZZLoose', 'ZZTight']
         muonIds = ['Loose', 'Tight', 'ZZLoose', 'ZZTight']
-        elecIsos = [0.5, 0.2, 0.15]
-        muonIsos = [0.4, 0.2, 0.12]
+        elecIsos = [0.5, 0.2, 0.15, 0]
+        muonIsos = [0.4, 0.2, 0.12, 0]
         idList = []
         idMap = {}
         for id in elecIds:
             for iso in elecIsos:
-                idName = 'elec%s%0.2f' % (id, iso)
+                idName = 'elec%s%0.2f' % (id, iso) if iso else 'elec%sNoIso' % id
                 idName = idName.replace('.','p')
                 idList += [idName]
                 idMap[idName] = {
                     'idDef' : {
                         'e': id
-                    },
-                    'isoCut' : {
-                        'e': iso
                     }
                 }
+                if iso:
+                    idMap[idName]['isoCut'] = {
+                        'e': iso
+                    }
         for id in muonIds:
             for iso in muonIsos:
-                idName = 'muon%s%0.2f' % (id, iso)
+                idName = 'muon%s%0.2f' % (id, iso) if iso else 'muon%sNoIso' % id
                 idName = idName.replace('.','p')
                 idList += [idName]
                 idMap[idName] = {
                     'idDef' : {
                         'm': id
-                    },
-                    'isoCut' : {
-                        'm': iso
                     }
                 }
+                if iso:
+                    idMap[idName]['isoCut'] = {
+                        'm': iso
+                    }
         return idList, idMap
                 
 
@@ -224,20 +226,18 @@ class AnalyzerWZ(AnalyzerBase):
 
     def zSelection(self,rtrow):
         leps = self.objects
-        if not leps: return False
-        m1 = getattr(rtrow,'%s_%s_Mass' % (leps[0], leps[1])) if not lep_order(leps[0], leps[1]) else\
-             getattr(rtrow,'%s_%s_Mass' % (leps[1], leps[0]))
+        o = ordered(leps[0], leps[1])
+        m1 = getattr(rtrow,'%s_%s_Mass' % (o[0],o[1]))
         l0Pt = getattr(rtrow,'%sPt' %leps[0])
         return abs(m1-ZMASS)<20. and l0Pt>20.
 
     def wSelection(self,rtrow):
         leps = self.objects
-        if not leps: return False
         if getattr(rtrow, '%sPt' %leps[2])<20.: return False
         if rtrow.pfMetEt < 30.: return False
         for l in leps[:2]:
-            dr = getattr(rtrow, '%s_%s_DR' %(l,leps[2])) if not lep_order(l,leps[2]) else\
-                 getattr(rtrow, '%s_%s_DR' %(leps[2],l))
+            o = ordered(l,leps[2])
+            dr = getattr(rtrow, '%s_%s_DR' % (o[0],o[1]))
             if dr < 0.1: return False
         return True
 
