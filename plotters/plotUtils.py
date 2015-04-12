@@ -20,7 +20,7 @@ def python_mkdir(dir):
 
 def defineCutFlowMap(region,channels,mass):
     # define regions (based on number of taus in higgs candidate)
-    regionMap = { 'Hpp3l' : {}, 'Hpp4l' : {} }
+    regionMap = { 'Hpp3l' : {}, 'Hpp4l' : {}, 'WZ' : {} }
     regionMap['Hpp3l'][0] = {
         'st' : 'finalstate.sT>1.1*%f+60.' %mass,
         'zveto' : 'fabs(z1.mass-%f)>80.' %ZMASS,
@@ -60,6 +60,13 @@ def defineCutFlowMap(region,channels,mass):
         'dphi' : 'hN.dPhi<2.5',
         'mass' : None
     }
+    regionMap['WZ'][0] = {
+        'zpt' : '(z1.Pt1>20.&z1.Pt2>10.)',
+        'zmass' : 'fabs(z1.mass-%f)<20.' % ZMASS,
+        'wpt' : 'w1.Pt1>20.',
+        'met' : 'w1.met>30.',
+        'm3l' : 'finalstate.Mass>100.'
+    }
     # define cutmap to be returned
     cutMap = { 'cuts' : [], 'labels': [], 'labels_simple': [], 'preselection': [] }
     if region == 'Hpp3l':
@@ -85,6 +92,14 @@ def defineCutFlowMap(region,channels,mass):
                  'zveto' : '',
                  'dphi' : '',
                  'mass' : '' }
+    elif region == 'WZ':
+        cutMap['labels'] = ['Preselection (ID)','Z lepton p_{T}','Z window','W lepton p_{T}',\
+                            'E_{T}^{miss}','M_{3l}']
+        cutMap['labels_simple'] = ['Presel (ID)','Z lep pt', 'Z window', 'W lep pt',\
+                                   'MET', 'mass3l']
+        cutMap['preselection'] = ['All events','Three lepton','Trigger','Fiducial','4th lepton veto']
+        cutMap['cuts'] = ['1', regionMap['WZ'][0]['zpt'], regionMap['WZ'][0]['zmass'], regionMap['WZ'][0]['wpt'],\
+                          regionMap['WZ'][0]['met'], regionMap['WZ'][0]['m3l']]
     else:
         cutMap['cuts'] = '1'
         cutMap['labels'] = ['%s Full Selection' %region]
@@ -142,6 +157,62 @@ def getChannels(numLeptons,**kwargs):
     if numLeptons == 3: channels = [x[0]+x[1] for x in itertools.product(lepPairs,lepTypes)]
     else: channels = [x[0]+x[1] for x in itertools.product(lepPairs,lepPairs)]
     return channels,leptons
+
+def getMergeDict(period):
+    '''Return a dictionary of samples to merge in plotting.'''
+    sampleMergeDict = {}
+    # 13 tev
+    if period==13:
+        sampleMergeDict['SingleTop'] = ['TBarToLeptons_s-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola',\
+                                        'TBarToLeptons_t-channel_Tune4C_CSA14_13TeV-aMCatNLO-tauola',\
+                                        'TToLeptons_s-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola',\
+                                        'TToLeptons_t-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola',\
+                                        'T_tW-channel-DR_Tune4C_13TeV-CSA14-powheg-tauola',\
+                                        'Tbar_tW-channel-DR_Tune4C_13TeV-CSA14-powheg-tauola']
+        sampleMergeDict['Diboson']   = ['WZJetsTo3LNu_Tune4C_13TeV-madgraph-tauola',\
+                                        'ZZTo4L_Tune4C_13TeV-powheg-pythia8']
+        sampleMergeDict['WZJets']    = ['WZJetsTo3LNu_Tune4C_13TeV-madgraph-tauola']
+        sampleMergeDict['ZZJets']    = ['ZZTo4L_Tune4C_13TeV-powheg-pythia8']
+        sampleMergeDict['TTJets']    = ['TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola']
+        sampleMergeDict['ZJets']     = ['DYJetsToLL_M-50_13TeV-madgraph-pythia8']
+        sampleMergeDict['WJets']     = ['WJetsToLNu_13TeV-madgraph-pythia8-tauola']
+        sampleMergeDict['TTVJets']   = ['TTWJets_Tune4C_13TeV-madgraph-tauola',\
+                                        'TTZJets_Tune4C_13TeV-madgraph-tauola']
+    # 8 TeV sample aliases
+    if period==8:
+        sampleMergeDict['WWJets']    = ['WWJetsTo2L2Nu_TuneZ2star_8TeV-madgraph-tauola']
+        sampleMergeDict['WZJets']    = ['WZJetsTo2L2Q_TuneZ2star_8TeV-madgraph-tauola',\
+                                        'WZJetsTo3LNu_TuneZ2_8TeV-madgraph-tauola']
+        sampleMergeDict['Diboson']   = ['WWJetsTo2L2Nu_TuneZ2star_8TeV-madgraph-tauola',\
+                                        'WZJetsTo2L2Q_TuneZ2star_8TeV-madgraph-tauola',\
+                                        'WZJetsTo3LNu_TuneZ2_8TeV-madgraph-tauola',\
+                                        'ZZJetsTo4L_TuneZ2star_8TeV-madgraph-tauola']
+        sampleMergeDict['ZZJets']    = ['ZZJetsTo4L_TuneZ2star_8TeV-madgraph-tauola']
+        sampleMergeDict['SingleTop'] = ['T_s-channel_TuneZ2star_8TeV-powheg-tauola',\
+                                        'T_t-channel_TuneZ2star_8TeV-powheg-tauola',\
+                                        'T_tW-channel-DR_TuneZ2star_8TeV-powheg-tauola',\
+                                        'Tbar_s-channel_TuneZ2star_8TeV-powheg-tauola',\
+                                        'Tbar_t-channel_TuneZ2star_8TeV-powheg-tauola',\
+                                        'Tbar_tW-channel-DR_TuneZ2star_8TeV-powheg-tauola']
+        sampleMergeDict['TTJets']    = ['TTJetsFullLepMGDecays', 'TTJetsSemiLepMGDecays']
+        sampleMergeDict['ZJets']     = ['Z1jets_M50',\
+                                        'Z2jets_M50_S10',\
+                                        'Z3jets_M50',\
+                                        'Z4jets_M50']
+        #sampleMergeDict['ZJets']     = ['DYJetsToLL_M-50_TuneZ2Star_8TeV-madgraph-tarball']
+        sampleMergeDict['data']      = ['data_Run2012A',\
+                                        'data_Run2012B',\
+                                        'data_Run2012C',\
+                                        'data_Run2012D']
+        sampleMergeDict['TTVJets']   = ['TTZJets',\
+                                        'TTWJets',\
+                                        'TTWWJets',\
+                                        'TTGJets']
+        sampleMergeDict['VVVJets']   = ['ZZZNoGstarJets',\
+                                        'WWZNoGstarJets',\
+                                        'WWWJets']
+    return sampleMergeDict
+
 
 def getSigMap(numLeptons,mass):
     '''Return a signal map for a given running period'''
@@ -201,10 +272,10 @@ def getChannelStringsCuts(region,channels):
     channelCuts = ['channel=="%s"' % x for x in channels]
     channelsWZ = [['ee','e'],['ee','m'],['mm','e'],['mm','m']]
     channelStringsWZ = ['(ee)e','(ee)#mu','(#mu#mu)e','(#mu#mu)#mu']
-    channelCutsWZ = ['zFlv=="%s"&&wFlv=="%s"' %(x[0],x[1]) for x in channelsWZ]
+    channelCutsWZ = ['z1Flv=="%s"&&w1Flv=="%s"' %(x[0],x[1]) for x in channelsWZ]
     channelsZ = ['ee','mm']
     channelStringsZ = ['ee','#mu#mu']
-    channelCutsZ = ['zFlv=="%s"' %x for x in channelsZ]
+    channelCutsZ = ['z1Flv=="%s"' %x for x in channelsZ]
     channelsTTW = [['eee','eem'],['eme','emm'],['mme','mmm']]
     channelStringsTTW = ['ee','e#mu','#mu#mu']
     channelCutsTTW = ['(channel=="%s"||channel=="%s")' %(x[0],x[1]) for x in channelsTTW]

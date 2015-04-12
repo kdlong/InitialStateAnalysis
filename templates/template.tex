@@ -1,0 +1,37 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+\usecolortheme{beaver}
+\setbeamertemplate{navigation symbols}{}
+
+\definecolor{uwred}{HTML}{B70101}
+
+\setbeamercolor*{frametitle}{fg=gray!10!white,bg=darkred!80!black}
+
+\usepackage{textpos}
+\usepackage{graphicx}
+
+\title{TEMPLATE}
+\author{Devin N. Taylor}
+\institute[UW-Madison]{University of Wisconsin-Madison}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+\maketitle
+\end{frame}
+
+\addtobeamertemplate{frametitle}{}{%
+\begin{textblock*}{100mm}(.9\textwidth,-.9cm)
+\includegraphics[height=0.85cm]{uw-logo}
+\end{textblock*}
+\begin{textblock*}{100mm}(.95\textwidth,-1cm)
+\includegraphics[height=1cm]{cms-logo}
+\end{textblock*}}
+
+\section{SECTION}
+\begin{frame}{SLIDE}
+CONTENT
+\end{frame}
+
+\end{document}

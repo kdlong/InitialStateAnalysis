@@ -30,13 +30,14 @@ class AnalyzerWZ(AnalyzerBase):
     def __init__(self, sample_location, out_file, period):
         self.channel = 'WZ'
         self.final_states = ['eee','eem','emm','mmm']
-        self.initial_states = ['z','w'] # in order of leptons returned in choose_objects
+        self.initial_states = ['z1','w1'] # in order of leptons returned in choose_objects
         self.object_definitions = {
-            'w': ['em','n'],
-            'z': ['em','em'],
+            'w1': ['em','n'],
+            'z1': ['em','em'],
         }
-        #self.cutflow_labels = ['Gen Fiducial', 'Fiducial + loose p_{T}','Trigger','Tight ID','Isolation','3l Mass','Z Selection','W Selection']
-        self.cutflow_labels = ['gen fid (no p_{T})','Trigger','Tight ID', 'Isolation', '3l Mass','Z Selection','W Selection']
+        self.cutflow_labels = ['Trigger','Fiducial','ID','3l Mass','Z Selection','W Selection']
+        self.alternateIds, self.alternateIdMap = self.defineAlternateIds()
+        self.doVBF = True
         super(AnalyzerWZ, self).__init__(sample_location, out_file, period)
 
     ###############################
@@ -68,11 +69,56 @@ class AnalyzerWZ(AnalyzerBase):
 
         return ([massdiff], leps)
 
-    ##########################
-    ### Defin preselection ###
-    ##########################
+    # overide good_to_store
+    # will store via veto
+    @staticmethod
+    def good_to_store(rtrow, cand1, cand2):
+        '''
+        Veto on 4th lepton
+        '''
+        return (rtrow.eVetoWZ + rtrow.muVetoWZ == 0)
 
+    def defineAlternateIds(self):
+        elecIds = ['Veto', 'Loose', 'Medium', 'Tight', 'Trig', 'NonTrig', 'ZZLoose', 'ZZTight']
+        muonIds = ['Loose', 'Tight', 'ZZLoose', 'ZZTight']
+        elecIsos = [0.5, 0.2, 0.15, 0]
+        muonIsos = [0.4, 0.2, 0.12, 0]
+        idList = []
+        idMap = {}
+        for id in elecIds:
+            for iso in elecIsos:
+                idName = 'elec%s%0.2f' % (id, iso) if iso else 'elec%sNoIso' % id
+                idName = idName.replace('.','p')
+                idList += [idName]
+                idMap[idName] = {
+                    'idDef' : {
+                        'e': id
+                    }
+                }
+                if iso:
+                    idMap[idName]['isoCut'] = {
+                        'e': iso
+                    }
+        for id in muonIds:
+            for iso in muonIsos:
+                idName = 'muon%s%0.2f' % (id, iso) if iso else 'muon%sNoIso' % id
+                idName = idName.replace('.','p')
+                idList += [idName]
+                idMap[idName] = {
+                    'idDef' : {
+                        'm': id
+                    }
+                }
+                if iso:
+                    idMap[idName]['isoCut'] = {
+                        'm': iso
+                    }
+        return idList, idMap
+                
 
+    ###########################
+    ### Define preselection ###
+    ###########################
     def preselection(self,rtrow):
         cuts = CutSequence()
         #cuts.add(self.genfiducial)
@@ -87,14 +133,12 @@ class AnalyzerWZ(AnalyzerBase):
 
     def selection(self,rtrow):
         cuts = CutSequence()
-        #cuts.add(self.genfiducial)
-        cuts.add(self.fiducial)
         cuts.add(self.trigger)
-        #cuts.add(self.ID_tight)
-        #cuts.add(self.isolation)
-        #cuts.add(self.mass3l)
-        #cuts.add(self.zSelection)
-        #cuts.add(self.wSelection)
+        cuts.add(self.fiducial)
+        cuts.add(self.ID_tight)
+        cuts.add(self.mass3l)
+        cuts.add(self.zSelection)
+        cuts.add(self.wSelection)
         return cuts
 
     def getIdArgs(self,type):
@@ -119,16 +163,26 @@ class AnalyzerWZ(AnalyzerBase):
                 'e':0.2,
                 'm':0.2
             }
+        if type=='Veto':
+            kwargs['idDef'] = {
+                'e':'Veto',
+                'm':'Loose',
+                't':'Loose'
+            }
+            kwargs['isoCut'] = {
+                'e':0.4,
+                'm':0.4
+            }
+        if type in self.alternateIds:
+            kwargs = self.alternateIdMap[type]
         return kwargs
 
     def trigger(self, rtrow):
         triggers = ["mu17ele8isoPass", "mu8ele17isoPass",
-                    "doubleETightPass", "tripleEPass",
-                    "doubleMuPass", "doubleMuTrkPass"]
+                    "doubleETightPass", "doubleMuPass", "doubleMuTrkPass"]
 
         if self.period == '13':
-            triggers = ['muEPass', 'doubleMuPass',
-                        'doubleEPass', 'tripleEPass']
+            triggers = ['muEPass', 'doubleMuPass', 'doubleEPass']
 
         for t in triggers:
             if getattr(rtrow,t)>0:
@@ -188,8 +242,16 @@ class AnalyzerWZ(AnalyzerBase):
             if getattr(rtrow, '%s%s' %(l,isotype)) > isocut: return False
         return True
 
-    def mass3l(self,rtrow):
-        return rtrow.Mass > 100.
+    def passAnyId(self,rtrow):
+        '''Check to make sure the leptons pass at least 1 ID'''
+        passCheck = {'e': False, 'm': False}
+        for altId in self.alternateIds:
+           if passCheck[altId[0]]: continue
+           if self.ID(rtrow,*self.objects,**self.getIdArgs(altId)): passCheck[altId[0]] = True
+        return passCheck['e'] and passCheck['m']
+
+    def ID_veto(self, rtrow):
+        return self.ID(rtrow,*self.objects,**self.getIdArgs('Veto'))
 
     def ID_loose(self, rtrow):
         return self.ID(rtrow,*self.objects,**self.getIdArgs('Loose'))
@@ -204,20 +266,18 @@ class AnalyzerWZ(AnalyzerBase):
 
     def zSelection(self,rtrow):
         leps = self.objects
-        if not leps: return False
-        m1 = getattr(rtrow,'%s_%s_Mass' % (leps[0], leps[1])) if not lep_order(leps[0], leps[1]) else\
-             getattr(rtrow,'%s_%s_Mass' % (leps[1], leps[0]))
+        o = ordered(leps[0], leps[1])
+        m1 = getattr(rtrow,'%s_%s_Mass' % (o[0],o[1]))
         l0Pt = getattr(rtrow,'%sPt' %leps[0])
         return abs(m1-ZMASS)<20. and l0Pt>20.
 
     def wSelection(self,rtrow):
         leps = self.objects
-        if not leps: return False
         if getattr(rtrow, '%sPt' %leps[2])<20.: return False
         if rtrow.pfMetEt < 30.: return False
         for l in leps[:2]:
-            dr = getattr(rtrow, '%s_%s_DR' %(l,leps[2])) if not lep_order(l,leps[2]) else\
-                 getattr(rtrow, '%s_%s_DR' %(leps[2],l))
+            o = ordered(l,leps[2])
+            dr = getattr(rtrow, '%s_%s_DR' % (o[0],o[1]))
             if dr < 0.1: return False
         return True
 
@@ -226,6 +286,7 @@ class AnalyzerWZ(AnalyzerBase):
 ##########################
 def parse_command_line(argv):
     parser = argparse.ArgumentParser()
+    parser.add_argument('analyzer', type=str)
     parser.add_argument('in_sample', type=str)
     parser.add_argument('out_file', type=str)
     parser.add_argument('period', type=str)
@@ -240,7 +301,7 @@ def main(argv=None):
 
     args = parse_command_line(argv)
 
-    analyzer = AnalyzerWZ(args.in_sample,args.out_file,args.period)
+    if args.analyzer == 'WZ': analyzer = AnalyzerWZ(args.in_sample,args.out_file,args.period)
     with analyzer as thisAnalyzer:
         thisAnalyzer.analyze()
 

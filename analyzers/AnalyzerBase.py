@@ -67,6 +67,12 @@ def lep_order(a, b):
         return a_index > b_index or a[0] > b[0]
     return a[0] > b[0]
 
+def ordered(a,b):
+    '''
+    Return a,b in lep order.
+    '''
+    return [a,b] if lep_order(b,a) else [b,a]
+
 class AnalyzerBase(object):
     '''
     The basic analyzer class. Inheritor classes must define
@@ -96,7 +102,9 @@ class AnalyzerBase(object):
             states = [self.initial_states] + self.other_states
         else:
             states = [self.initial_states]
-        self.ntuple, self.branches = buildNtuple(self.object_definitions,states,self.channel,self.final_states)
+        if not hasattr(self,'alternateIds'): self.alternateIds = []
+        if not hasattr(self,'doVBF'): self.doVBF = False
+        self.ntuple, self.branches = buildNtuple(self.object_definitions,states,self.channel,self.final_states,altIds=self.alternateIds,doVBF=self.doVBF)
 
     def analyze(self,**kwargs):
         '''
@@ -260,6 +268,8 @@ class AnalyzerBase(object):
             for o in range(len(allowedObjects)):
                 promptDict[allowedObjects[o]] = prompts[o]
             ntupleRow["select.pass_%s"%promptString] = int(self.npass(rtrow,promptDict,**self.getIdArgs('Tight')))
+        for altId in self.alternateIds:
+            ntupleRow["select.pass_%s"%altId] = int(self.ID(rtrow,*self.objects,**self.alternateIdMap[altId]))
 
         
         ntupleRow["event.evt"] = int(rtrow.evt)
@@ -282,12 +292,21 @@ class AnalyzerBase(object):
         ntupleRow["finalstate.jetVeto20"] = int(rtrow.jetVeto20)
         ntupleRow["finalstate.jetVeto30"] = int(rtrow.jetVeto30)
         ntupleRow["finalstate.jetVeto40"] = int(rtrow.jetVeto40)
-        ntupleRow["finalstate.bjetVeto20"] = int(rtrow.bjetCSVVeto)
-        ntupleRow["finalstate.bjetVeto30"] = int(rtrow.bjetCSVVeto30)
+        ntupleRow["finalstate.bjetVeto20"] = int(rtrow.bjetCISVVeto20)
+        ntupleRow["finalstate.bjetVeto30"] = int(rtrow.bjetCISVVeto30)
         ntupleRow["finalstate.muonVeto5"] = int(rtrow.muVetoPt5IsoIdVtx)
         ntupleRow["finalstate.muonVeto10Loose"] = int(rtrow.muGlbIsoVetoPt10)
         ntupleRow["finalstate.muonVeto15"] = int(rtrow.muVetoPt15IsoIdVtx)
         ntupleRow["finalstate.elecVeto10"] = int(rtrow.eVetoMVAIsoVtx)
+        if self.doVBF:
+            ntupleRow["finalstate.vbfMass"] = float(rtrow.vbfMass)
+            ntupleRow["finalstate.vbfPt"] = float(rtrow.vbfdijetpt)
+            ntupleRow["finalstate.vbfPt1"] = float(rtrow.vbfj1pt)
+            ntupleRow["finalstate.vbfPt2"] = float(rtrow.vbfj2pt)
+            ntupleRow["finalstate.vbfEta1"] = float(rtrow.vbfj1eta)
+            ntupleRow["finalstate.vbfEta2"] = float(rtrow.vbfj2eta)
+            ntupleRow["finalstate.centralJetVeto20"] = float(rtrow.vbfJetVeto20)
+            ntupleRow["finalstate.centralJetVeto30"] = float(rtrow.vbfJetVeto30)
 
         def store_state(rtrow,ntupleRow,state,theObjects):
             objStart = 0
@@ -320,8 +339,14 @@ class AnalyzerBase(object):
                         ntupleRow["%s.Pt%i" % (i,objCount)] = float(getattr(rtrow, "%sPt" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
                         ntupleRow["%s.Eta%i" % (i,objCount)] = float(getattr(rtrow, "%sEta" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
                         ntupleRow["%s.Phi%i" % (i,objCount)] = float(getattr(rtrow, "%sPhi" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
+                        if orderedFinalObjects[objCount-1][0]=='e': isoVar = 'RelPFIsoRho'
+                        if orderedFinalObjects[objCount-1][0]=='m': isoVar = 'RelPFIsoDBDefault'
+                        isoVal = float(getattr(rtrow, "%s%s" % (orderedFinalObjects[objCount-1], isoVar))) if orderedFinalObjects[objCount-1][0] in 'em' and theObjects else float(-9.)
+                        ntupleRow["%s.Iso%i" % (i,objCount)] = isoVal
                         ntupleRow["%s.Chg%i" % (i,objCount)] = float(getattr(rtrow, "%sCharge" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
                         ntupleRow["%s.PassTight%i" % (i,objCount)] = float(self.ID(rtrow,orderedFinalObjects[objCount-1],**self.getIdArgs('Tight'))) if theObjects else float(-9)
+                        for altId in self.alternateIds:
+                            ntupleRow["%s.pass_%s_%i"%(i,altId,objCount)] = int(self.ID(rtrow,orderedFinalObjects[objCount-1],**self.alternateIdMap[altId]) if theObjects else float(-9))
                 objStart += numObjects
 
 
@@ -430,6 +455,7 @@ class AnalyzerBase(object):
         idDef = kwargs.pop('idDef',{})
         isoCut = kwargs.pop('isoCut',{})
         for obj in objects:
+            if obj[0] not in idDef: continue
             type = idDef[obj[0]]
             if 'ID_%s_%s' %(type,obj) in self.cache:
                 if not self.cache['ID_%s_%s'%(type,obj)]: return False
@@ -439,6 +465,7 @@ class AnalyzerBase(object):
                 if not result: return False
         if isoCut:
             for obj in objects:
+                if obj[0] not in isoCut: continue
                 if obj[0] == 'e':
                     isotype = "RelPFIsoRho"
                 if obj[0] == 'm':

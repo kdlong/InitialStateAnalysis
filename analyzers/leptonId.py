@@ -36,6 +36,10 @@ def elec_id(rtrow, l, period, idType):
         if not getattr(rtrow, '%sCBIDMedium' % l): return False
     if idType=='Tight':
         if not getattr(rtrow, '%sCBIDTight' % l): return False
+    if idType=='ZZLoose':
+        if not _elec_zz_loose(rtrow,l,period): return False
+    if idType=='ZZTight':
+        if not _elec_zz_tight(rtrow,l,period): return False
     return True
 
 def muon_id(rtrow, l, period, idType):
@@ -43,6 +47,10 @@ def muon_id(rtrow, l, period, idType):
         if not getattr(rtrow,'%sPFIDTight'%l): return False
     if idType=='Loose':
         if not getattr(rtrow,'%sPFIDLoose'%l): return False
+    if idType=='ZZLoose':
+        if not _muon_zz_loose(rtrow,l,period): return False
+    if idType=='ZZTight':
+        if not _muon_zz_tight(rtrow,l,period): return False
     return True
 
 def tau_id(rtrow, l, period, idType):
@@ -58,11 +66,49 @@ def tau_id(rtrow, l, period, idType):
     return True
 
 
+
+def _muon_zz_loose(rtrow, l, period):
+    if getattr(rtrow, "%sPt" % l) < 5: return False
+    if abs(getattr(rtrow, "%sEta" % l)) > 2.4: return False
+    if abs(getattr(rtrow, '%sPVDZ' % l)) > 1.: return False
+    if abs(getattr(rtrow, '%sPVDXY' % l)) > 0.5:return False
+    isGlobal = getattr(rtrow, '%sIsGlobal' % l)
+    isTracker = getattr(rtrow, '%sIsTracker' % l)
+    matchedStations = getattr(rtrow, '%sMatchedStations' % l)
+    return isGlobal or isTracker or matchedStations>0
+
+def _muon_zz_tight(rtrow, l, period):
+    if not _muon_zz_loose(rtrow,l,period): return False
+    return getattr(rtrow,'%sIsPFMuon' %l)
+
+def _elec_zz_loose(rtrow, l, period):
+    if getattr(rtrow, "%sPt" % l) < 7: return False
+    if abs(getattr(rtrow, "%sEta" % l)) > 2.5: return False
+    if abs(getattr(rtrow, '%sPVDZ' % l)) > 1.: return False
+    if abs(getattr(rtrow, '%sPVDXY' % l)) > 0.5:return False
+    if getattr(rtrow,'%sMissingHits'%l) > 1: return False
+    return True
+
+def _elec_zz_tight(rtrow, l, period):
+    if not _elec_zz_loose(rtrow,l,period): return False
+    return _elec_mva_nontriggering_zz(rtrow,l,period)
+
+def _elec_mva_nontriggering_zz(rtrow, l, period):
+    pt = getattr(rtrow, "%sPt" % l)
+    eta = abs(getattr(rtrow, "%sSCEta" % l))
+    mva = getattr(rtrow, "%sMVANonTrigID" % l)
+
+    if 5.0 < pt < 10.0:
+        return (eta < 0.8 and mva > -0.202) or (0.8 < eta < 1.479 and mva > -0.444) or (1.479 < eta and mva > 0.264)
+    elif 10.0 < pt:
+        return (eta < 0.8 and mva > -0.110) or (0.8 < eta < 1.479 and mva > -0.284) or (1.479 < eta and mva > -0.212)
+    else:
+        return False
+
 def _elec_mva_nontriggering(rtrow, l, period):
     pt = getattr(rtrow, "%sPt" % l)
     eta = abs(getattr(rtrow, "%sSCEta" % l))
-    mvastr = "%sMVANonTrigID" %l if period == '13' else "%sMVANonTrig" %l
-    mva = getattr(rtrow, mvastr)
+    mva = getattr(rtrow, "%sMVANonTrigID" % l)
 
     if 5.0 < pt < 10.0:
         return (eta < 0.8 and mva > 0.47) or (0.8 < eta < 1.479 and mva > 0.004) or (1.479 < eta and mva > 0.295)
@@ -76,8 +122,7 @@ def _elec_mva_nontriggering(rtrow, l, period):
 def _elec_mva_triggering(rtrow, l, period):
     pt = getattr(rtrow, "%sPt" % l)
     eta = abs(getattr(rtrow, "%sSCEta" % l))
-    mvastr = "%sMVATrigID" %l if period == '13' else "%sMVATrig" %l
-    mva = getattr(rtrow, mvastr)
+    mva = getattr(rtrow, "%sMVATrigID" % l)
 
     if 10.0 < pt < 20.0:
         return (eta < 0.8 and mva > 0.00) or (0.8 < eta < 1.479 and mva > 0.10) or (1.479 < eta and mva > 0.62)

@@ -52,3 +52,19 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# directories
+datacards/
+ntuples*/
+plots/
+limitData/
+
+# latex
+*.pdf
+*.dvi
+*.ps
+*.aux
+*.nav
+*.out
+*.snm
+*.toc

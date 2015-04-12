@@ -208,6 +208,7 @@ class AnalyzerHpp4l(AnalyzerBase):
 ##########################
 def parse_command_line(argv):
     parser = argparse.ArgumentParser()
+    parser.add_argument('analyzer', type=str)
     parser.add_argument('in_sample', type=str)
     parser.add_argument('out_file', type=str)
     parser.add_argument('period', type=str)
@@ -222,7 +223,7 @@ def main(argv=None):
 
     args = parse_command_line(argv)
 
-    analyzer = AnalyzerHpp4l(args.in_sample,args.out_file,args.period)
+    if args.analyzer == 'Hpp4l': analyzer = AnalyzerHpp4l(args.in_sample,args.out_file,args.period)
     with analyzer as thisAnalyzer:
         thisAnalyzer.analyze()
 
