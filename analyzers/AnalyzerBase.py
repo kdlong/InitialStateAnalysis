@@ -313,6 +313,7 @@ class AnalyzerBase(object):
                     ntupleRow["%s.mass" %i] = float(-9)
                     ntupleRow["%s.sT" %i] = float(getattr(rtrow, "%sPt" % finalObjects[0])) if theObjects else float(-9)
                     ntupleRow["%s.dPhi" %i] = float(-9)
+                    ntupleRow["%s.dR" %i] = float(-9)
                     ntupleRow["%sFlv.Flv" %i] = finalObjects[0][0] if theObjects else 'a'
                 elif 'n' == self.object_definitions[i][1]:
                     ntupleRow["%s.mass" %i] = float(getattr(rtrow, "%sMtToPFMET" % finalObjects[0])) if theObjects else float(-9)
@@ -323,6 +324,7 @@ class AnalyzerBase(object):
                     ntupleRow["%s.mass" %i] = float(getattr(rtrow, "%s_%s_Mass" % (finalObjects[0], finalObjects[1]))) if theObjects else float(-9)
                     ntupleRow["%s.sT" %i]   = float(sum([getattr(rtrow, "%sPt" % x) for x in finalObjects])) if theObjects else float(-9)
                     ntupleRow["%s.dPhi" %i] = float(getattr(rtrow, "%s_%s_DPhi" % (finalObjects[0], finalObjects[1]))) if theObjects else float(-9)
+                    ntupleRow["%s.dR" %i] = float(getattr(rtrow, "%s_%s_DR" % (finalObjects[0], finalObjects[1]))) if theObjects else float(-9)
                     ntupleRow["%sFlv.Flv" %i] = finalObjects[0][0] + finalObjects[1][0] if theObjects else 'aa'
                 objCount = 0
                 for obj in self.object_definitions[i]:
@@ -340,6 +342,13 @@ class AnalyzerBase(object):
                         ntupleRow["%s.Iso%i" % (i,objCount)] = isoVal
                         ntupleRow["%s.Chg%i" % (i,objCount)] = float(getattr(rtrow, "%sCharge" % orderedFinalObjects[objCount-1])) if theObjects else float(-9)
                         ntupleRow["%s.PassTight%i" % (i,objCount)] = float(self.ID(rtrow,orderedFinalObjects[objCount-1],**self.getIdArgs('Tight'))) if theObjects else float(-9)
+                        # manually add w z deltaRs
+                        if i=='w1':
+                            oZ1 = ordered(theObjects[0],theObjects[2])
+                            oZ2 = ordered(theObjects[1],theObjects[2])
+                            ntupleRow["w1.dR1_z1_1"] = float(getattr(rtrow,"%s_%s_DR" % (oZ1[0],oZ1[1])))
+                            ntupleRow["w1.dR1_z1_2"] = float(getattr(rtrow,"%s_%s_DR" % (oZ2[0],oZ2[1])))
+                        # do alternate IDs
                         for altId in self.alternateIds:
                             ntupleRow["%s.pass_%s_%i"%(i,altId,objCount)] = int(self.ID(rtrow,orderedFinalObjects[objCount-1],**self.alternateIdMap[altId]) if theObjects else float(-9))
                 objStart += numObjects

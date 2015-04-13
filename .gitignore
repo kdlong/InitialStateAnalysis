@@ -56,7 +56,7 @@ target/
 # directories
 datacards/
 ntuples*/
-plots/
+plots*/
 limitData/
 
 # latex

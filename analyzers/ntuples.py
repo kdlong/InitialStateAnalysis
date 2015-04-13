@@ -161,6 +161,9 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
                 Float_t mass;\
                 Float_t sT;\
                 Float_t dPhi;"
+            if 'n' not in val:
+                strForBranch += "Float_t dR;"
+                strToProcess += "dR:"
             objCount = 0
             for obj in val:
                 if obj == 'n':
@@ -176,6 +179,23 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
                         Float_t Eta%i;\
                         Float_t Phi%i;\
                         Float_t Iso%i;" % (objCount, objCount, objCount, objCount)
+                    # do the deltaRs
+                    #for s in states:
+                    #    for k in state:
+                    #        if k==key and s==state: continue # dont dR the same object
+                    #        v = object_definitions[k]
+                    #        oCount = 0
+                    #        for o in v:
+                    #            if o == 'n': continue
+                    #            else:
+                    #                oCount += 1
+                    #                strForBranch += "dR%i_%s_%i:" % (objCount,k,oCount)
+                    #                strToProcess += "Float_t dR%i_%s_%i;" % (objCount,k,oCount)
+                    # manually add the W Z deltaRs for now
+                    if key == 'w1':
+                        strForBranch += "dR1_z1_1:dR1_z1_2:"
+                        strToProcess += "Float_t dR1_z1_1; Float_t dR1_z1_2;"
+            # do the alt IDs
             objCount = 0
             for obj in val:
                 if obj == 'n': continue
