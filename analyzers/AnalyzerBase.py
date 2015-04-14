@@ -28,7 +28,7 @@ import os
 import sys
 from itertools import permutations, combinations
 import argparse
-
+import copy
 #from scale_factors import LeptonScaleFactors
 #from pu_weights import PileupWeights
 import leptonId as lepId
@@ -41,6 +41,13 @@ sys.argv.pop()
 
 ZMASS = 91.1876
 
+class Cut(object):
+    def __init__(self, function, name):
+        self.function = function
+        self.name = name
+    def evaluate(self, rtrow):
+        return self.function(rtrow) 
+
 class CutSequence(object):
     '''
     A class for defining cut orders for preselection.
@@ -48,14 +55,51 @@ class CutSequence(object):
     def __init__(self):
         self.cut_sequence = []
 
-    def add(self, fun):
+    def add(self, cut_function):
         self.cut_sequence.append(fun)
 
     def evaluate(self, rtrow):
-        for i,cut in enumerate(self.cut_sequence):
-            if not cut(rtrow): 
-                return False, i
-        return True, i+1
+        cut_history = OrderedDict()
+        for cut in enumerate(self.cut_sequence):
+            cut_history.extend({cut.getName() : cut.evaluate(rtrow)})
+        return cut_history
+
+    def getCuts(self):
+        return self.cut_sequence()
+
+    def addSequence(self, sequence):
+        for cut in sequence.getCuts():
+            self.cut_sequence.append(cut)
+
+class CutTracker(object):
+    def __init__(self, preselection, selection)
+        self.preselection = preselection
+        self.selection = 
+        self.allCuts = preselection.deep
+        
+
+
+    def pass_preselection(self, rtrow):
+        '''
+        Wrapper for preselection defined by user.
+        '''
+        if 'preselection' in self.cache: return self.cache['preselection']
+        cuts = self.preselection(rtrow)
+        cutResults,self.num = cuts.evaluate(rtrow)
+        self.cache['preselection'] = cutResults
+        return cutResults
+
+    def pass_selection(self,rtrow):
+        '''
+        Wrapper for the selection defined by the user (tight selection whereas preselection
+        is the loose selection for fake rate method).
+        '''
+        if 'selection' in self.cache: return self.cache['selection']
+        cuts = self.selection(rtrow)
+        cutResults,self.num = cuts.evaluate(rtrow)
+        self.cache['selection'] = cutResults
+        return cutResults
+
 
 def lep_order(a, b):
     '''
@@ -396,28 +440,6 @@ class AnalyzerBase(object):
         for key,val in nrow.iteritems():
             branch, var = key.split('.')
             setattr(self.branches[branch],var,val)
-
-    def pass_preselection(self, rtrow):
-        '''
-        Wrapper for preselection defined by user.
-        '''
-        if 'preselection' in self.cache: return self.cache['preselection']
-        cuts = self.preselection(rtrow)
-        cutResults,self.num = cuts.evaluate(rtrow)
-        self.cache['preselection'] = cutResults
-        return cutResults
-
-    def pass_selection(self,rtrow):
-        '''
-        Wrapper for the selection defined by the user (tight selection whereas preselection
-        is the loose selection for fake rate method).
-        '''
-        if 'selection' in self.cache: return self.cache['selection']
-        cuts = self.selection(rtrow)
-        cutResults,self.num = cuts.evaluate(rtrow)
-        self.cache['selection'] = cutResults
-        return cutResults
-
     def npass(self,rtrow,numObjects,**kwargs):
         '''
         Get the number that pass the full selection for fake rate method.

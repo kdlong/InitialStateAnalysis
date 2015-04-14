@@ -264,6 +264,9 @@ class AnalyzerWZ(AnalyzerBase):
         pts.sort(reverse=True)
         return pts[0] > 25.0 and pts[1] > 15.0
 
+    def mass3l(self,rtrow):
+        return rtrow.Mass > 100.
+
     def zSelection(self,rtrow):
         leps = self.objects
         o = ordered(leps[0], leps[1])

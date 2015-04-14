@@ -127,7 +127,9 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
     jetCount = 0
     phoCount = 0
     for key in states[0]:
+        print "Key is %s" % key
         val = object_definitions[key]
+        print "val is %s" % val
         for obj in val:
             if obj=='n': continue
             else:
@@ -149,7 +151,7 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
                 structureDict['%s%iFlv' % (charName, objCount)] = [flvStruct, rt.AddressOf(flvStruct,'Flv'),'Flv/C']
                 structOrder += ['%s%i' % (charName, objCount)]
                 structOrder += ['%s%iFlv' % (charName, objCount)]
-
+    print "There are %i leptons " % lepCount
     # define objects for each initial state
     for state in states:
         for key in state:
