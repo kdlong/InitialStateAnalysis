@@ -162,8 +162,8 @@ def buildNtuple(object_definitions,states,channelName,final_states,**kwargs):
                 Float_t sT;\
                 Float_t dPhi;"
             if 'n' not in val:
-                strForBranch += "Float_t dR;"
-                strToProcess += "dR:"
+                strToProcess += "Float_t dR;"
+                strForBranch += "dR:"
             objCount = 0
             for obj in val:
                 if obj == 'n':

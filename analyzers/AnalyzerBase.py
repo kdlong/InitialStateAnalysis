@@ -113,7 +113,9 @@ class AnalyzerBase(object):
         self.bestCandMap = {}
         self.cutflowMap = {}
         eventsToWrite = set()
+        eventsWritten = set()
         numEvts = 0
+        totalWritten = 0
 
         # iterate over files
         for i, file_name in enumerate(self.file_names):
@@ -176,16 +178,28 @@ class AnalyzerBase(object):
                         self.eventMap[eventkey] = ntupleRow
                         eventsToWrite.add(eventkey)
 
-            rtFile.Close()
+            rtFile.Close("R")
             numEvts += tempEvts
+
+            # end of file, write the ntuples
+            self.file.cd()
+            for key in eventsToWrite:
+                if key in eventsWritten:
+                    print "%s %s: Error: attempted to write previously written event" % (self.channel, self.sample_name)
+                else:
+                    self.write_row(self.eventMap[key])
+                    self.ntuple.Fill()
+            eventsWritten.update(eventsToWrite)
+            self.eventMap = {}
+            eventsToWrite = set()
 
         # now we store all events that are kept
         print "%s %s: Filling Tree" % (self.channel, self.sample_name)
-        self.file.cd()
-        for key in eventsToWrite:
-            self.write_row(self.eventMap[key])
-            self.ntuple.Fill()
-        print "%s %s: Filled Tree (%i events)" % (self.channel, self.sample_name, len(eventsToWrite))
+        #self.file.cd()
+        #for key in eventsToWrite:
+        #    self.write_row(self.eventMap[key])
+        #    self.ntuple.Fill()
+        print "%s %s: Filled Tree (%i events)" % (self.channel, self.sample_name, len(eventsWritten))
 
         # now we store the total processed events
         print "%s %s: Processed %i events" % (self.channel, self.sample_name, numEvts)
