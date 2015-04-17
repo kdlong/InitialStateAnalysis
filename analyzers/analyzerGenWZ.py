@@ -47,6 +47,8 @@ class CutTracker(object):
         self.preselection = preselection
         self.selection = selection 
         #self.allCuts = preselection.deep
+#    def pass_preselection(self):
+        
 class AnalyzerGenWZ(object):
     def __init__(self, root_file_name):
         self.root_file = rtFile = ROOT.TFile(root_file_name)
@@ -78,29 +80,28 @@ class AnalyzerGenWZ(object):
     def trigger(self):
         leptons = self.event.getLeptons()
         foundEPt12 = False
+        foundEPt23 = False
         foundMuPt8 = False
+        foundMuPt17 = False
+        foundMuPt23 = False
 
         for lepton in leptons:
             if abs(lepton.getPdgID()) == 11:
-                # Double E
-                if lepton.Pt() > 23 and foundEPt12:
-                    return True
-                # EMu
-                elif lepton.Pt() > 23 and foundMuPt8:
-                    return True
-                elif lepton.Pt() > 12:
+                if lepton.Pt() > 23 and not foundEPt23:
+                    foundEPt23 = True
+                elif lepton.Pt() > 12 and not foundEPt12:
                     foundEPt12 = True
             elif abs(lepton.getPdgID()) == 13:
-                # Double Mu
-                if lepton.Pt() > 17 and foundMuPt8:
-                    return True
-                # EMu
-                elif lepton.Pt() > 23 and foundEPt12:
-                    return True
+                if lepton.Pt() > 23 and not foundMuPt23:
+                    foundMuPt23 = True
+                elif lepton.Pt() > 17 and not foundMuPt17:
+                    foundMuPt17 = True
                 elif lepton.Pt() > 8:
                     foundMuPt8 = True
-        return False
-
+        return (foundMuPt17 and foundMuPt8) or \
+               (foundEPt23 and foundEPt12) or \
+               (foundMuPt8 and foundEPt23) or \
+               (foundMuPt23 and foundEPt12)
     def store_event(self, branches):
         ntupleEntry = {}
         for i, lepton in enumerate(self.leptons):
@@ -149,7 +150,9 @@ class AnalyzerGenWZ(object):
             self.event.Print()
             if self.fiducial():
                 passed['gen'] += 1
-            if self.fiducial():
+            else:
+                continue
+            if self.trigger():
                 passed['trig'] += 1
             else:
                 continue
