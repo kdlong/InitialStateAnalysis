@@ -80,8 +80,8 @@ class AnalyzerWZ(AnalyzerBase):
     def defineAlternateIds(self):
         elecIds = ['Veto', 'Loose', 'Medium', 'Tight', 'Trig', 'NonTrig', 'ZZLoose', 'ZZTight']
         muonIds = ['Loose', 'Tight', 'ZZLoose', 'ZZTight']
-        elecIsos = [0.5, 0.2, 0.15, 0]
-        muonIsos = [0.4, 0.2, 0.12, 0]
+        elecIsos = [0.5, 0.2, 0.15]
+        muonIsos = [0.4, 0.2, 0.12]
         idList = []
         idMap = {}
         for id in elecIds:
