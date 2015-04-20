@@ -34,7 +34,7 @@ xsecs[13] = {
 
     # https://twiki.cern.ch/twiki/bin/viewauth/CMS/StandardModelCrossSectionsat13TeV
     # Z -> ll = 0.101 * inclusive
-    # w -> lv = 0.326 * inclusive
+    # w -> lv = 0.324 * inclusive
 
     # from McM
     'WZJetsTo3LNu_Tune4C_13TeV-madgraph-tauola' : 1.634 * PB,
