@@ -186,7 +186,7 @@ def plotRegion(analysis,channel,runPeriod,**kwargs):
     cutFlowMap = {}
     cutFlowMap[channel] = defineCutFlowMap(channel,finalStates,mass)
     print cutFlowMap
-    if channel in ['Hpp3l','Hpp4l']:
+    if channel in ['Hpp3l','Hpp4l','WZ']:
         plotter = Plotter(channel,ntupleDir=ntuples,saveDir=saves,period=runPeriod,rootName='plots_cutFlowSelections',mergeDict=mergeDict)
         if useSignal:
             plotter.initializeBackgroundSamples([sigMap[runPeriod][x] for x in channelBackground[channel]+['Sig']])

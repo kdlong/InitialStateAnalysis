@@ -16,24 +16,32 @@ TT_XSEC = 241.5* PB
 xsecs = { 7 : {},
           8 : {},
           13: {} }
-# now taking from madgraph NLO http://arxiv.org/pdf/1405.0301v2.pdf
 xsecs[13] = {
-    'WJetsToLNu_13TeV-madgraph-pythia8-tauola' : 20508. * PB,
-    'DYJetsToLL_M-50_13TeV-madgraph-pythia8' : 4720. * PB,
+    # https://twiki.cern.ch/twiki/bin/viewauth/CMS/StandardModelCrossSectionsat13TeV
+    'WJetsToLNu_13TeV-madgraph-pythia8-tauola' : 20508.9 * PB,
+    'DYJetsToLL_M-50_13TeV-madgraph-pythia8' : 6025.2 * PB,
     
-    'TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola' : (6.741e2 + 4.106e2 + 1.795e2) * PB, # 0, 1, 2 jets
-    'TToLeptons_s-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola' : 4.297 * PB, # madgraph
-    'TToLeptons_t-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola' : 114.2 * PB, # madgraph
-    'T_tW-channel-DR_Tune4C_13TeV-CSA14-powheg-tauola' : 35. * PB, # no phase space in madgraph
-    'TBarToLeptons_s-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola' : 2.605 * PB, # madgraph 
-    'TBarToLeptons_t-channel_Tune4C_CSA14_13TeV-aMCatNLO-tauola' : 65.45 * PB, # madgraph
-    'Tbar_tW-channel-DR_Tune4C_13TeV-CSA14-powheg-tauola' : 35. * PB, # no phase space in madgraph
+    # https://twiki.cern.ch/wiki/bin/view/LHCPhysics/TtbarNNLO
+    'TTJets_MSDecaysCKM_central_Tune4C_13TeV-madgraph-tauola' : 831.76 * PB,
 
-    'WZJetsTo3LNu_Tune4C_13TeV-madgraph-tauola' : 43.871 * PB,
+    # https://twiki.cern.ch/twiki/bin/viewauth/CMS/SingleTopSigma
+    'TToLeptons_s-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola' : 7.20 * PB, 
+    'TToLeptons_t-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola' : 136.02 * PB, 
+    'T_tW-channel-DR_Tune4C_13TeV-CSA14-powheg-tauola' : 35.6 * PB,
+    'TBarToLeptons_s-channel-CSA14_Tune4C_13TeV-aMCatNLO-tauola' : 4.16 * PB,
+    'TBarToLeptons_t-channel_Tune4C_CSA14_13TeV-aMCatNLO-tauola' : 80.95 * PB,
+    'Tbar_tW-channel-DR_Tune4C_13TeV-CSA14-powheg-tauola' : 35.6 * PB,
+
+    # https://twiki.cern.ch/twiki/bin/viewauth/CMS/StandardModelCrossSectionsat13TeV
+    # Z -> ll = 0.101 * inclusive
+    # w -> lv = 0.324 * inclusive
+
+    # from McM
+    'WZJetsTo3LNu_Tune4C_13TeV-madgraph-tauola' : 1.634 * PB,
     'ZZTo4L_Tune4C_13TeV-powheg-pythia8' : 1.218 * PB,
 
-    'TTWJets_Tune4C_13TeV-madgraph-tauola' : 0.2057 * PB,
-    'TTZJets_Tune4C_13TeV-madgraph-tauola' : 0.232 * PB,
+    'TTWJets_Tune4C_13TeV-madgraph-tauola' : 1.152 * PB,
+    'TTZJets_Tune4C_13TeV-madgraph-tauola' : 2.232 * PB,
 
     'DBLH_m500' : 0.001652 * PB, # from pythia
 }
