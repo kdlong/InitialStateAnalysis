@@ -5,60 +5,57 @@ from itertools import combinations
 import argparse
 from ntuples import *
 from GenEvent import *
+import CutTracker
 
 sys.argv.append('-b')
 import ROOT
 sys.argv.pop()
 
 ZMASS = 91.1876
+#    def pass_preselection(self, rtrow):
+#        '''
+#        Wrapper for preselection defined by user.
+#        '''
+#        if 'preselection' in self.cache: return self.cache['preselection']
+#        cuts = self.preselection(rtrow)
+#        cutResults,self.num = cuts.evaluate(rtrow)
+#        self.cache['preselection'] = cutResults
+#        return cutResults
+#
+#    def pass_selection(self,rtrow):
+#        '''
+#        Wrapper for the selection defined by the user (tight selection whereas preselection
+#        is the loose selection for fake rate method).
+#        '''
+#        if 'selection' in self.cache: return self.cache['selection']
+#        cuts = self.selection(rtrow)
+#        cutResults,self.num = cuts.evaluate(rtrow)
+#        self.cache['selection'] = cutResults
+#        return cutResults
 
-class Cut(object):
-    def __init__(self, function, name):
-        self.function = function
-        self.name = name
-    def evaluate(self, rtrow):
-        return self.function(rtrow) 
-
-class CutSequence(object):
-    '''
-    A class for defining cut orders for preselection.
-    '''
-    def __init__(self):
-        self.cut_sequence = []
-
-    def add(self, cut_function):
-        self.cut_sequence.append(fun)
-
-    def evaluate(self, rtrow):
-        cut_history = OrderedDict()
-        for cut in enumerate(self.cut_sequence):
-            cut_history.extend({cut.getName() : cut.evaluate(rtrow)})
-        return cut_history
-
-    def getCuts(self):
-        return self.cut_sequence()
-
-    def addSequence(self, sequence):
-        for cut in sequence.getCuts():
-            self.cut_sequence.append(cut)
-
-class CutTracker(object):
-    def __init__(self, preselection, selection):
-        self.preselection = preselection
-        self.selection = selection 
-        #self.allCuts = preselection.deep
-#    def pass_preselection(self):
-        
 class AnalyzerGenWZ(object):
     def __init__(self, root_file_name):
         self.root_file = rtFile = ROOT.TFile(root_file_name)
-        self.event = GenEvent()
-    def fiducial(self):
+
+        self.cut_sequence = CutTracker.CutSequence()
+        self.cut_sequence.add(self.fiducial, "Fiducial + loose p_{T}")
+        self.cut_sequence.add(self.trigger, "Trigger")
+        self.cut_sequence.add(self.mass3l, "3l Mass")
+        self.cut_sequence.add(self.zSelection, "Z Mass")
+        self.cut_sequence.add(self.wSelection, "W selection")
+        self.cut_tracker = CutTracker.CutTracker(self.cut_sequence)
+    def track_event(self, event, event_id):
+        self.cut_tracker.track_event(event, event_id)
+    def store_events(self):
+        self.cut_tracker.store_cutflow()
+    def print_cutflow(self):
+        self.cut_tracker.Print()
+    def fiducial(self, event):
         keep = []
         ptCut = 10
         eEta = 2.5
         mEta = 2.4
-        for lepton in self.event.getLeptons():
+        for lepton in event.getLeptons():
             etaCut = eEta if abs(lepton.getPdgID()) == 11 else mEta 
             if lepton.Pt() < ptCut:
                 continue
@@ -68,17 +65,17 @@ class AnalyzerGenWZ(object):
         
         self.leptons = keep
         return len(self.leptons) > 2
-    def mass3l(self): 
-        print "3l Mass is %f" % self.event.get3lMass()
-        return self.event.get3lMass() > 100
-    def Zselection(self):
-        Zcand = self.event.getZcand()
-        print "Z Mass is %f" % Zcand.M()
+    def mass3l(self, event): 
+        #print "3l Mass is %f" % event.get3lMass()
+        return event.get3lMass() > 100
+    def zSelection(self, event):
+        Zcand = event.getZcand()
+        #print "Z Mass is %f" % Zcand.M()
         return abs(Zcand.M() - ZMASS) < 20 
-    def Wselection(self):
-        return self.event.getMET() > 30 and self.event.getWLepton().Pt() > 20
-    def trigger(self):
-        leptons = self.event.getLeptons()
+    def wSelection(self, event):
+        return event.getMET() > 30 and event.getWLepton().Pt() > 20
+    def trigger(self, event):
+        leptons = event.getLeptons()
         foundEPt12 = False
         foundEPt23 = False
         foundMuPt8 = False
@@ -130,49 +127,27 @@ class AnalyzerGenWZ(object):
     #    }
     #    ntuple, branches = buildNtuple(object_definitions,initial_states,'WZ',final_states)
 
+        event = GenEvent()
         numEvents = tree.GetEntries()
-        passed = { 'gen' : 0, 'trig' : 0, '3l' : 0 , 'Z' : 0, 'W' : 0 }
         for row in range(numEvents):
-            self.event.reset()
+            event.reset()
             tree.GetEntry(row)
             for i, pdgid in enumerate(tree.pdgId):
                 if abs(pdgid) in [11, 13]:
-                    self.event.foundLepton(pdgid,
+                    event.foundLepton(pdgid,
                         tree.pt[i],
                         tree.eta[i],
                         tree.phi[i],
                         tree.mass[i])
                 if abs(pdgid) in [12, 14, 16]:
-                    self.event.foundMET(tree.pt[i],
+                    event.foundMET(tree.pt[i],
                         tree.eta[i],
                         tree.phi[i],
                         tree.mass[i])
-            self.event.Print()
-            if self.fiducial():
-                passed['gen'] += 1
-            else:
-                continue
-            if self.trigger():
-                passed['trig'] += 1
-            else:
-                continue
-            if self.mass3l():
-                passed['3l'] += 1
-            else:
-                continue
-            if self.Zselection():
-                passed['Z'] += 1
-            else:
-                continue
-            if self.Wselection():
-                passed['W'] += 1
-            #event.store_event(branches)
-
-        print "%i passed the fiducial cuts" % passed['gen']
-        print "%i passed the trigger cuts" % passed['trig']
-        print "%i passed the 3l mass cut" % passed['3l']
-        print "%i passed the Z mass cut" % passed['Z']
-        print "%i passed the W mass cut" % passed['W']
+                self.track_event(event, i)
+            #event.Print()
+        self.store_events()
+        self.print_cutflow()    
     #    outfile.Write()
     #    outfile.Close()
 

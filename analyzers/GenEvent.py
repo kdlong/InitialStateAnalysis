@@ -43,7 +43,8 @@ class GenEvent(object):
                 lepsNoZ.remove(l1)
                 lepsNoZ.remove(l2)
         lepsNoZ.sort(key=lambda x: x.Pt())
-        self.WLepton = lepsNoZ[0]
+        if len(lepsNoZ) > 0:
+            self.WLepton = lepsNoZ[0]
         return Zcand
     def getLeptons(self):
         self.leptons.sort(key=lambda x: x.Pt())
